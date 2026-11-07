@@ -1,0 +1,311 @@
+/* MIRA Pengajuan Material — revisi manager */
+.pengajuan-info { display: flex; flex-direction: column; gap: 20px; }
+.pengajuan-row { display: grid; gap: 18px 20px; }
+.pengajuan-three-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pengajuan-two-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pengajuan-helper { display: block; margin-top: 7px; color: #8c7479; font-size: 10px; line-height: 1.4; }
+.pengajuan-qty-mismatch { background: #fff0f1 !important; }
+.pengajuan-qty-mismatch input[type="number"] { border-color: #d75c66 !important; background: #fff9f9; }
+.pengajuan-warning { padding: 12px 15px; margin-top: 12px; border: 1px solid #edc2c7; background: #fff1f2; border-radius: 10px; color: #9d2734; font-size: 11px; font-weight: 650; }
+.project-card .submit-btn:disabled { background: #c5c3c4 !important; color: #fff !important; box-shadow: none !important; cursor: not-allowed !important; filter: none !important; opacity: 1; transform: none !important; }
+.pengajuan-submit-hint { margin-top: 9px; color: #98898b; font-size: 10px; text-align: center; }
+@media (max-width: 820px) { .pengajuan-three-cols { grid-template-columns: 1fr; } .pengajuan-two-cols { grid-template-columns: 1fr; } }
+
+/* Ensure preview always appears above detail and checker dialogs */
+.preview-overlay { z-index: 20000; }
+
+
+/* =========== REQUEST LAMA, STATUS UPLOAD, RIWAYAT =========== */
+.project-card .pengajuan-old-request { padding:15px 18px; border:1px solid #ead4d7; border-radius:12px; background:#fff9f9; }
+.project-card .pengajuan-old-request-title { display:flex; justify-content:space-between; gap:12px; align-items:center; color:#8b7377; font-size:9px; font-weight:800; letter-spacing:.06em; }
+.project-card .pengajuan-old-request-title strong { color:var(--wine,#5c0b12); font-size:12px; letter-spacing:0; }
+.project-card .pengajuan-old-request-grid { margin-top:14px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.project-card .pengajuan-old-request-grid > div { min-width:0; padding:11px 12px; border:1px solid #eedfe1; border-radius:9px; background:white; }
+.project-card .pengajuan-old-request-grid small { display:block; margin-bottom:5px; color:#99878a; font-size:9px; }
+.project-card .pengajuan-old-request-grid strong { display:block; color:#4b393e; overflow-wrap:anywhere; font-size:10.5px; }
+.project-card .pengajuan-old-request-empty { margin:12px 0 0; color:#88767a; font-size:10.5px; }
+.project-card .pengajuan-file-success { display:flex; gap:9px; align-items:center; padding:10px; margin-top:11px; border-radius:9px; background:#eef8f0; border:1px solid #cce5d0; }
+.project-card .pengajuan-file-success-icon { display:grid; place-items:center; width:24px; height:24px; flex:0 0 24px; border-radius:50%; background:#d4ecda; color:#297044; font-size:13px; font-weight:900; }
+.project-card .pengajuan-file-success > div { flex:1; min-width:0; }
+.project-card .pengajuan-file-success strong { display:block; color:#286640; font-size:10px; }
+.project-card .pengajuan-file-success small { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-top:3px; color:#4c7c5d; font-size:9px; }
+.pengajuan-history-card { width:100%; max-width:1280px; margin:20px auto 0; padding:24px 28px; background:#fff; border:1px solid var(--line,#e6d9db); border-radius:18px; box-shadow:0 12px 35px rgba(65,30,33,.055); }
+.pengajuan-history-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.pengajuan-history-header > div > span { color:#9c8085; font-size:8px; font-weight:800; letter-spacing:1px; }
+.pengajuan-history-header h2 { margin:5px 0; font-family:'DM Serif Display',serif; font-size:25px; font-weight:400; color:var(--wine,#5c0b12); }
+.pengajuan-history-header p { margin:0; color:#99888b; font-size:10px; }
+.pengajuan-history-count { padding:7px 11px; border-radius:20px; color:#7b2330; background:#f6ebed; font-size:9px; font-weight:800; white-space:nowrap; }
+.pengajuan-history-filter { display:grid; grid-template-columns:minmax(0,1fr) 210px; gap:10px; margin:18px 0 13px; }
+.pengajuan-history-filter input,.pengajuan-history-filter select { width:100%; height:41px; padding:0 12px; border:1px solid var(--line-2,#d8c5c8); border-radius:9px; font-size:10px; font-family:inherit; background:#fff; color:#5d5052; }
+.pengajuan-history-list { border:1px solid #eadfe0; border-radius:11px; overflow:hidden; }
+.pengajuan-history-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:16px; align-items:center; padding:14px 15px; border-top:1px solid #f2e9ea; }
+.pengajuan-history-row:first-child { border-top:0; }
+.pengajuan-history-main { min-width:0; }
+.pengajuan-history-main strong { display:block; color:#63101b; font-size:11.5px; }
+.pengajuan-history-main span { display:block; margin-top:5px; color:#8c797d; font-size:9px; overflow-wrap:anywhere; }
+.pengajuan-history-meta { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.pengajuan-history-meta small { color:#98878b; font-size:9px; }
+.pengajuan-history-status { background:#f8eeee; color:#7b2531; border-radius:20px; padding:5px 8px; font-size:8.5px; font-weight:800; white-space:nowrap; }
+.pengajuan-history-row button { padding:9px 12px; border-radius:8px; border:1px solid #d4b3b8; color:#68121d; background:#fff8f8; font-size:9px; font-weight:800; cursor:pointer; white-space:nowrap; }
+.pengajuan-history-row button:hover { background:#f5e8ea; }
+.pengajuan-history-empty { padding:40px 15px; text-align:center; border:1px dashed #dfc9cc; border-radius:10px; color:#8f7f82; font-size:11px; }
+.pengajuan-history-footnote { font-size:9px; color:#a39597; margin:14px 0 0; }
+@media(max-width:760px){ .project-card .pengajuan-old-request-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .pengajuan-history-filter { grid-template-columns:1fr; } .pengajuan-history-row { grid-template-columns:1fr; gap:10px; } .pengajuan-history-meta { align-items:flex-start; } .pengajuan-history-header { align-items:flex-start; } }
+@media(max-width:480px){ .project-card .pengajuan-old-request-grid { grid-template-columns:1fr; } .pengajuan-history-card { padding:20px 16px; } }
+
+
+/* =========================================================
+   MIRA / PENGAJUAN MATERIAL — UI REFINEMENT
+   Scoped to Pengajuan Material only. Keep App.css unchanged.
+   ========================================================= */
+.pengajuan-refined { padding: 30px 32px 33px; }
+.pengajuan-refined .pengajuan-info { gap: 22px; }
+.pengajuan-refined .pengajuan-section-heading { display:flex; align-items:center; gap:13px; min-width:0; }
+.pengajuan-refined .pengajuan-section-heading > div { min-width:0; }
+.pengajuan-refined .pengajuan-eyebrow { display:block; margin-bottom:3px; color:#ab8c90; font-size:8px; font-weight:800; letter-spacing:1.4px; }
+.pengajuan-refined .pengajuan-section-heading h2 { margin:0; font-family:'DM Serif Display',serif; font-weight:400; font-size:24px; line-height:1.12; color:var(--wine,#5c0b12); }
+.pengajuan-refined .pengajuan-section-heading p { margin:5px 0 0; color:#9a888b; font-size:10.5px; line-height:1.5; }
+.pengajuan-refined .pengajuan-section-header { margin-bottom:19px; }
+.pengajuan-refined .pengajuan-section-header .pengajuan-section-heading { align-items:center; }
+.pengajuan-refined .pengajuan-row { gap:20px; }
+.pengajuan-refined .field label { font-weight:750; margin-bottom:9px; }
+.pengajuan-refined .field select { height:47px; border-radius:10px; background:#fff; }
+.pengajuan-refined .field select:disabled { cursor:not-allowed; background:#f8f4f5; color:#a5999b; }
+.pengajuan-refined .divider { margin:29px 0; background:#eadfe1; }
+/* Request lama — editorial card rather than six nested cards */
+.pengajuan-refined .pengajuan-old-request { padding:18px 20px 0; border:1px solid #e5ced2; border-radius:13px; background:linear-gradient(125deg,#fffafa 0%,#fff 85%); box-shadow:0 7px 22px rgba(71,21,27,.025); }
+.pengajuan-refined .pengajuan-old-request-title { display:flex; align-items:center; justify-content:space-between; gap:12px; letter-spacing:0; }
+.pengajuan-refined .pengajuan-reference-label { display:flex; align-items:center; gap:11px; min-width:0; }
+.pengajuan-refined .pengajuan-reference-icon { display:grid; place-items:center; width:35px; height:35px; border-radius:9px; background:#f4e5e7; color:#751620; font-size:17px; flex-shrink:0; }
+.pengajuan-refined .pengajuan-reference-label > div > span { display:block; margin-bottom:4px; color:#a08387; font-size:8px; font-weight:800; letter-spacing:1px; }
+.pengajuan-refined .pengajuan-reference-label strong { font-family:'DM Serif Display',serif; font-weight:400; font-size:23px; color:var(--wine,#5c0b12); line-height:1.05; }
+.pengajuan-refined .pengajuan-pr-chip { padding:7px 12px; background:#fff3df; border:1px solid #efdec0; border-radius:999px; color:#8b5e19; font-weight:800; font-size:9px; white-space:nowrap; }
+.pengajuan-refined .pengajuan-reference-meta { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:21px 0 16px; }
+.pengajuan-refined .pengajuan-reference-meta > div { min-width:0; padding-right:12px; border-right:1px solid #eadcde; }
+.pengajuan-refined .pengajuan-reference-meta > div:last-child { border-right:0; }
+.pengajuan-refined .pengajuan-reference-meta small { display:block; margin-bottom:6px; color:#ab9699; font-size:8.5px; font-weight:800; letter-spacing:.5px; }
+.pengajuan-refined .pengajuan-reference-meta strong { display:block; color:#43363a; font-size:12px; font-weight:800; overflow-wrap:anywhere; }
+.pengajuan-refined .pengajuan-reference-footer { display:flex; align-items:center; gap:17px; flex-wrap:wrap; margin:0 -20px; padding:12px 20px; border-top:1px solid #f1e5e6; background:#fdf9f9; border-radius:0 0 13px 13px; }
+.pengajuan-refined .pengajuan-reference-footer span { color:#8d777b; font-size:9.5px; }
+.pengajuan-refined .pengajuan-reference-footer strong { color:#6a444d; font-weight:750; }
+.pengajuan-refined .pengajuan-old-request-empty { margin:14px 0 18px; }
+/* Material grid including validation */
+.pengajuan-refined .material-table { overflow-x:auto; border:1px solid #e7d8da; border-radius:12px; }
+.pengajuan-refined .material-grid { width:100%; min-width:800px; display:grid; grid-template-columns:38px minmax(180px,2.1fr) minmax(68px,.68fr) minmax(92px,.8fr) minmax(92px,.8fr) minmax(105px,1fr) 43px; gap:9px; align-items:center; }
+.pengajuan-refined .material-head { background:#f0e5e7; color:#6b1721; font-size:8.5px; letter-spacing:.45px; }
+.pengajuan-refined .material-row { min-height:63px; padding:10px; }
+.pengajuan-refined .material-row:nth-child(odd) { background:#fefbfb; }
+.pengajuan-refined .material-row select,.pengajuan-refined .material-row input { height:39px; border-color:#e0d1d4; }
+.pengajuan-refined .material-row select:focus,.pengajuan-refined .material-row input:focus { border-color:var(--wine-soft,#7e1821); }
+.pengajuan-refined .pengajuan-validation-cell { display:flex; align-items:center; min-width:0; }
+.pengajuan-refined .pengajuan-status-pill { display:inline-flex; align-items:center; justify-content:center; gap:4px; padding:6px 9px; border-radius:99px; font-size:8.5px; font-weight:800; white-space:nowrap; }
+.pengajuan-refined .pengajuan-status-pill.waiting { background:#f4eeee; color:#9c8488; }
+.pengajuan-refined .pengajuan-status-pill.matching { background:#e7f4e9; color:#287543; }
+.pengajuan-refined .pengajuan-status-pill.mismatch { background:#fce5e7; color:#ac2938; }
+.pengajuan-refined .pengajuan-qty-mismatch { background:#fff5f5 !important; }
+/* Upload documents and progress visually integrated */
+.pengajuan-refined .document-grid { gap:14px; }
+.pengajuan-refined .upload-card { padding:14px; border-color:#e8d8da; border-radius:12px; }
+.pengajuan-refined .upload-dropzone { min-height:112px; }
+.pengajuan-refined .pengajuan-file-success { margin-top:9px; }
+.pengajuan-refined .submit-btn:not(:disabled) { box-shadow:0 9px 24px rgba(92,11,18,.14); }
+/* History typography */
+.pengajuan-history-card .pengajuan-history-header { border-bottom:1px solid #f0e4e6; padding-bottom:17px; }
+.pengajuan-history-card .pengajuan-history-count { font-size:10px; }
+@media(max-width:1000px){ .pengajuan-refined .material-grid { min-width:850px; } }
+@media(max-width:780px){ .pengajuan-refined { padding:21px 17px; } .pengajuan-refined .pengajuan-reference-meta { grid-template-columns:repeat(2,minmax(0,1fr)); } .pengajuan-refined .pengajuan-reference-meta > div:nth-child(2) { border-right:0; } .pengajuan-refined .pengajuan-row.pengajuan-three-cols, .pengajuan-refined .pengajuan-row.pengajuan-two-cols { grid-template-columns:1fr; } }
+@media(max-width:520px){ .pengajuan-refined .pengajuan-old-request-title { align-items:flex-start; flex-direction:column; } .pengajuan-refined .pengajuan-reference-meta { grid-template-columns:1fr; } .pengajuan-refined .pengajuan-reference-meta > div { border-right:0; } }
+
+/* =========================================================
+   MIRA — POLISHED PENGAJUAN MATERIAL (v2)
+   Overrides limited to the Pengajuan Material screen.
+   ========================================================= */
+.pengajuan-refined {
+  padding: 34px 36px 38px;
+}
+
+/* Let each section breathe; avoid heading touching its first field. */
+.pengajuan-refined .pengajuan-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.pengajuan-refined .pengajuan-info > .pengajuan-section-heading {
+  margin: 0 0 25px;
+  padding-bottom: 0;
+}
+.pengajuan-refined .pengajuan-section-heading {
+  gap: 0;
+  align-items: flex-start;
+}
+.pengajuan-refined .pengajuan-section-heading h2 {
+  margin: 4px 0 0;
+  font-size: 25px;
+  line-height: 1.2;
+}
+.pengajuan-refined .pengajuan-section-heading p {
+  margin: 7px 0 0;
+  line-height: 1.5;
+}
+.pengajuan-refined .pengajuan-eyebrow {
+  margin: 0;
+  font-size: 8px;
+  letter-spacing: 1.45px;
+}
+.pengajuan-refined .pengajuan-section-header {
+  margin-bottom: 22px;
+  align-items: center;
+}
+.pengajuan-refined .pengajuan-row {
+  column-gap: 22px;
+  row-gap: 18px;
+}
+.pengajuan-refined .pengajuan-info > .pengajuan-row.pengajuan-three-cols {
+  margin-bottom: 24px;
+}
+.pengajuan-refined .pengajuan-info > .pengajuan-row.pengajuan-two-cols {
+  margin-top: 24px;
+}
+.pengajuan-refined .field {
+  min-width: 0;
+}
+.pengajuan-refined .field label {
+  margin-bottom: 10px;
+  line-height: 1.35;
+  font-size: 10.5px;
+}
+.pengajuan-refined .field select {
+  height: 48px;
+  padding: 0 15px;
+  border: 1px solid #dfcdd1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 10.5px;
+}
+.pengajuan-refined .field select:focus {
+  outline: none;
+  border-color: #8b3b45;
+  box-shadow: 0 0 0 3px rgba(92,11,18,.075);
+}
+.pengajuan-refined .field select:disabled {
+  background: #f8f6f6;
+  border-color: #eee5e6;
+}
+.pengajuan-refined .pengajuan-helper {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Request lama: compact reference panel instead of a second giant form. */
+.pengajuan-refined .pengajuan-old-request {
+  margin: 0;
+  padding: 17px 19px 0;
+  border-radius: 11px;
+  border-color: #eadbdd;
+  background: #fefbfb;
+  box-shadow: none;
+}
+.pengajuan-refined .pengajuan-reference-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.pengajuan-refined .pengajuan-reference-label {
+  gap: 10px;
+}
+.pengajuan-refined .pengajuan-reference-label strong {
+  font-size: 20px;
+}
+.pengajuan-refined .pengajuan-pr-chip {
+  padding: 6px 10px;
+}
+.pengajuan-refined .pengajuan-reference-meta {
+  margin: 17px 0 14px;
+  gap: 14px;
+}
+.pengajuan-refined .pengajuan-reference-meta strong {
+  font-size: 11px;
+}
+.pengajuan-refined .pengajuan-reference-footer {
+  margin: 0 -19px;
+  padding: 11px 19px;
+  background: #fcf8f8;
+}
+
+/* Firm, consistent separators between sections. */
+.pengajuan-refined > .divider {
+  height: 1px;
+  margin: 34px 0 30px;
+  background: #e9dde0;
+}
+
+/* Material section: clean table header and better vertical alignment. */
+.pengajuan-refined .material-table {
+  border-radius: 11px;
+  border-color: #e7dbdd;
+}
+.pengajuan-refined .material-grid {
+  min-width: 870px;
+  grid-template-columns:
+    34px minmax(185px,2.3fr) minmax(66px,.7fr)
+    minmax(87px,.85fr) minmax(87px,.85fr)
+    minmax(105px,1fr) 42px;
+  gap: 10px;
+}
+.pengajuan-refined .material-head {
+  min-height: 46px;
+  background: #f1e8e9;
+  font-size: 8.5px;
+  font-weight: 800;
+}
+.pengajuan-refined .material-row {
+  min-height: 64px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.pengajuan-refined .material-row:nth-child(odd) {
+  background: #fffcfc;
+}
+.pengajuan-refined .material-row select,
+.pengajuan-refined .material-row input {
+  height: 40px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+.pengajuan-refined .pengajuan-status-pill {
+  padding: 7px 10px;
+  font-size: 8.5px;
+}
+.pengajuan-refined .secondary-btn {
+  min-height: 40px;
+  background: #fffafa;
+}
+
+/* Document section and submit indicators. */
+.pengajuan-refined .document-grid { gap: 16px; }
+.pengajuan-refined .upload-card { padding: 16px; }
+.pengajuan-refined .submit-btn {
+  margin-top: 19px;
+}
+
+@media (max-width: 1100px) {
+  .pengajuan-refined { padding: 28px 26px 32px; }
+}
+@media (max-width: 820px) {
+  .pengajuan-refined .pengajuan-row.pengajuan-three-cols,
+  .pengajuan-refined .pengajuan-row.pengajuan-two-cols {
+    grid-template-columns: 1fr;
+  }
+  .pengajuan-refined .pengajuan-info > .pengajuan-row.pengajuan-three-cols { margin-bottom: 19px; }
+  .pengajuan-refined .pengajuan-info > .pengajuan-row.pengajuan-two-cols { margin-top: 19px; }
+  .pengajuan-refined .pengajuan-reference-meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .pengajuan-refined .pengajuan-reference-meta > div { border-right: 0; }
+}
+@media (max-width: 580px) {
+  .pengajuan-refined { padding: 23px 17px 28px; }
+  .pengajuan-refined .pengajuan-old-request-title { flex-direction: column; align-items: flex-start; }
+  .pengajuan-refined .pengajuan-reference-meta { grid-template-columns: 1fr; }
+  .pengajuan-refined .pengajuan-section-header { align-items: flex-start; }
+}
