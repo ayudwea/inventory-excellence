@@ -43,6 +43,23 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [successModal, setSuccessModal] = useState(null);
   const [submittedDetail, setSubmittedDetail] = useState(null);
 
+  // Saran diambil dari Nama Pekerjaan pengajuan yang pernah disimpan.
+  // Input tetap bebas: pengguna boleh mengetik pekerjaan baru.
+  const historiPekerjaan = Array.from(
+    new Map(
+      requests
+        .filter((r) => !jenisPermintaan || (r.jenisPermintaan || r.tipePermintaan) === jenisPermintaan)
+        .map((r) => String(r.pekerjaan || "").trim())
+        .filter(Boolean)
+        .map((nama) => [nama.toLocaleLowerCase("id-ID"), nama])
+    ).values()
+  );
+  const placeholderPekerjaan = !jenisPermintaan
+    ? "Pilih tipe permintaan terlebih dahulu"
+    : historiPekerjaan.length
+      ? `Ketik nama pekerjaan, mis. ${historiPekerjaan[0]}`
+      : "Ketik nama pekerjaan baru";
+
   const requestSudahDiganti = new Set(
     requests.map((r) => r.noReqDiganti).filter(Boolean)
   );
@@ -451,14 +468,20 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
                 id="nama-pekerjaan"
                 className="pengajuan-pekerjaan-input"
                 type="text"
+                list="mira-histori-pekerjaan"
                 value={pekerjaan}
                 onChange={(e) => setPekerjaan(e.target.value)}
-                placeholder={jenisPermintaan ? "Masukkan nama pekerjaan" : "Pilih tipe permintaan terlebih dahulu"}
+                placeholder={placeholderPekerjaan}
                 disabled={!jenisPermintaan}
                 maxLength={100}
                 autoComplete="off"
                 required
               />
+              <datalist id="mira-histori-pekerjaan">
+                {historiPekerjaan.map((nama) => (
+                  <option key={nama} value={nama} />
+                ))}
+              </datalist>
             </div>
           </div>
         </section>
