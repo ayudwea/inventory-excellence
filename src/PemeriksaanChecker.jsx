@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
+import Swal from "sweetalert2";
+import { supabase } from "./lib/supabase";
 
 const alasanTolakOptions = [
   "BA Tidak Tersedia",
@@ -9,11 +11,98 @@ const alasanTolakOptions = [
   "SPK Tidak Tersedia",
 ];
 
-function PemeriksaanChecker({ requests, onUpdateRequest }) {
+const dataKabelHeaders = [
+  "Area",
+  "Region",
+  "Branch",
+  "Nama WH",
+  "Kode Material",
+  "Haspel QTY",
+  "Potongan QTY",
+  "Total QTY",
+];
+
+const dataStokSapHeaders = [
+  "Material",
+  "Material description",
+  "Material Group",
+  "Plant",
+  "Nama wh",
+  "Branch",
+  "Region",
+  "Area",
+  "Storage location",
+  "Base Unit of Measure",
+  "Unrestricted",
+  "Currency",
+  "In transfer (plant)",
+];
+
+const sapSummaryMaterials = [
+  { code: "ADSS-12", label: "Total ADSS-12 (M)" },
+  { code: "ODP-SOLID-8-L", label: "ODP-SOLID-8-L (PCS)" },
+  { code: "PIGTAIL-SC", label: "PIGTAIL-SC (PCS)" },
+];
+
+function parseSapQuantity(value) {
+  const normalized = String(value ?? "").trim().replace(/\s/g, "");
+  if (!normalized) return 0;
+
+  const lastSeparator = Math.max(
+    normalized.lastIndexOf("."),
+    normalized.lastIndexOf(",")
+  );
+  if (lastSeparator < 0) {
+    const quantity = Number(normalized);
+    return Number.isFinite(quantity) ? quantity : 0;
+  }
+
+  const decimals = normalized.length - lastSeparator - 1;
+  const hasBothSeparators = normalized.includes(".") && normalized.includes(",");
+  const isThousandsSeparator =
+    !hasBothSeparators &&
+    ((normalized.match(/[.,]/g) || []).length > 1 || decimals === 3);
+  const numberString = isThousandsSeparator
+    ? normalized.replace(/[.,]/g, "")
+    : `${normalized.slice(0, lastSeparator).replace(/[.,]/g, "")}.${normalized
+        .slice(lastSeparator + 1)
+        .replace(/[.,]/g, "")}`;
+  const quantity = Number(numberString);
+
+  return Number.isFinite(quantity) ? quantity : 0;
+}
+
+async function appendCsvRows(tableName, headers, rows) {
+  const records = rows.map((row) =>
+    Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]))
+  );
+  let insertedCount = 0;
+
+  for (let index = 0; index < records.length; index += 500) {
+    const batch = records.slice(index, index + 500);
+    const { error } = await supabase.from(tableName).insert(batch);
+    if (error) {
+      const failure = new Error(error.message);
+      failure.insertedCount = insertedCount;
+      throw failure;
+    }
+    insertedCount += batch.length;
+  }
+
+  return insertedCount;
+}
+
+function PemeriksaanChecker({ requests, onUpdateRequest, onApproved }) {
   const [checkerRequestId, setCheckerRequestId] = useState("");
   const [alasanTolak, setAlasanTolak] = useState("");
   const [previewFile, setPreviewFile] = useState(null);
   const [excelPreview, setExcelPreview] = useState([]);
+  const [dataStokModalOpen, setDataStokModalOpen] = useState(false);
+  const [dataKabelModalOpen, setDataKabelModalOpen] = useState(false);
+  const [pendingSnapshots, setPendingSnapshots] = useState({});
+  const [dataStokSapDraft, setDataStokSapDraft] = useState(null);
+  const [dataKabelDraft, setDataKabelDraft] = useState(null);
+  const [submittingSnapshot, setSubmittingSnapshot] = useState("");
 
   const pendingRequests = requests.filter(
     (request) => request.status === "Menunggu Pemeriksaan Checker"
@@ -23,7 +112,62 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
     pendingRequests.find(
       (request) => request.requestId === checkerRequestId
     ) || null;
+  const visibleSnapshots = checkerDetail?.snapshots || pendingSnapshots;
+  const dataStokSapPreview = dataStokSapDraft || {
+    file: visibleSnapshots.dataStokSap,
+    headers: visibleSnapshots.dataStokSapHeaders,
+    rows: visibleSnapshots.dataStokSapRows,
+  };
+  const dataKabelPreview = dataKabelDraft || {
+    file: visibleSnapshots.dataKabelPotongan,
+    rows: visibleSnapshots.dataKabelPotonganRows,
+  };
+  const hasSapSnapshotData = Boolean(dataStokSapPreview.headers);
+  const sapSummary = useMemo(() => {
+    const headers = dataStokSapPreview.headers || [];
+    const rows = dataStokSapPreview.rows || [];
+    const warehouseIndex = headers.indexOf("Nama wh");
+    const materialIndex = headers.indexOf("Material");
+    const quantityIndex = headers.indexOf("Unrestricted");
+    const warehouses = new Map();
 
+    if (warehouseIndex < 0 || materialIndex < 0 || quantityIndex < 0) {
+      return [];
+    }
+
+    rows.forEach((row) => {
+      const warehouse = String(row[warehouseIndex] ?? "").trim();
+      const material = String(row[materialIndex] ?? "").trim().toUpperCase();
+      const summaryMaterial = sapSummaryMaterials.find(
+        (item) => item.code === material
+      );
+      if (!warehouse || !summaryMaterial) return;
+
+      if (!warehouses.has(warehouse)) {
+        warehouses.set(warehouse, new Map());
+      }
+
+      const quantities = warehouses.get(warehouse);
+      quantities.set(
+        summaryMaterial.code,
+        (quantities.get(summaryMaterial.code) || 0) +
+          parseSapQuantity(row[quantityIndex])
+      );
+    });
+
+    const totals = new Map(sapSummaryMaterials.map(({ code }) => [code, 0]));
+    const summaryRows = [...warehouses].map(([warehouse, quantities]) => {
+      sapSummaryMaterials.forEach(({ code }) => {
+        totals.set(code, totals.get(code) + (quantities.get(code) || 0));
+      });
+      return { warehouse, quantities };
+    });
+
+    return [
+      ...summaryRows,
+      { warehouse: "Total", quantities: totals },
+    ];
+  }, [dataStokSapPreview.headers, dataStokSapPreview.rows]);
   const detailStats = useMemo(() => {
     if (!checkerDetail) {
       return {
@@ -40,14 +184,11 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
       return ba !== boq;
     }).length;
 
-    const dokumenWajib =
-      checkerDetail.jenisPermintaan === "RECURRING"
-        ? [checkerDetail.files?.ba]
-        : [
-            checkerDetail.files?.spk,
-            checkerDetail.files?.boq,
-            checkerDetail.files?.ba,
-          ];
+    const dokumenWajib = [
+      checkerDetail.files?.spk,
+      checkerDetail.files?.boq,
+      checkerDetail.files?.ba,
+    ];
 
     return {
       totalMaterial: checkerDetail.materials.length,
@@ -97,6 +238,245 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
     }
   }
 
+  async function unggahDataStokSap(file) {
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Format file tidak sesuai",
+        text: "Data Stok SAP harus berupa file CSV.",
+      });
+      return;
+    }
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: "",
+        raw: false,
+      }).map((row) => row.map((cell) => String(cell)));
+      const [rawHeaders = [], ...dataRows] = rows;
+      const headers = rawHeaders.map((header) =>
+        String(header).replace(/^\uFEFF/, "").trim()
+      );
+
+      if (headers.length !== dataStokSapHeaders.length ||
+        !dataStokSapHeaders.every((header, index) => headers[index] === header)) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Header CSV tidak sesuai",
+          text: `Gunakan template dengan kolom: ${dataStokSapHeaders.join(", ")}.`,
+        });
+        return;
+      }
+
+      const validRows = dataRows.filter((row) =>
+        row.some((value) => String(value).trim() !== "")
+      );
+      setDataStokSapDraft({
+        file,
+        headers: dataStokSapHeaders,
+        rows: validRows,
+      });
+    } catch (error) {
+      console.error("Gagal mengunggah Data Stok SAP:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal membaca Data Stok SAP",
+        text: error.message,
+      });
+    }
+  }
+
+  async function submitDataStokSap() {
+    if (!dataStokSapDraft || submittingSnapshot) return;
+
+    setSubmittingSnapshot("sap");
+    try {
+      const insertedCount = await appendCsvRows(
+        "Data Stock SAP",
+        dataStokSapDraft.headers,
+        dataStokSapDraft.rows
+      );
+      simpanSnapshotData({
+        dataStokSap: dataStokSapDraft.file,
+        dataStokSapHeaders: dataStokSapDraft.headers,
+        dataStokSapRows: dataStokSapDraft.rows,
+      });
+      setDataStokSapDraft(null);
+      await Swal.fire({
+        icon: "success",
+        title: "Data Stok SAP tersimpan",
+        text: `${insertedCount} baris berhasil ditambahkan ke Supabase.`,
+      });
+    } catch (error) {
+      console.error("Gagal menyimpan Data Stok SAP ke Supabase:", error);
+      await Swal.fire({
+        icon: "error",
+        title: error.insertedCount > 0
+          ? "Sebagian data Stok SAP tersimpan"
+          : "Gagal mengunggah Data Stok SAP",
+        text: error.insertedCount > 0
+          ? `${error.insertedCount} baris telah ditambahkan sebelum gagal. ${error.message}`
+          : `Periksa koneksi Supabase, nama tabel, kolom, dan izin insert. ${error.message}`,
+      });
+    } finally {
+      setSubmittingSnapshot("");
+    }
+  }
+
+  function simpanSnapshotData(snapshotUpdates) {
+    if (checkerDetail) {
+      onUpdateRequest(checkerDetail.requestId, {
+        snapshots: {
+          ...checkerDetail.snapshots,
+          ...snapshotUpdates,
+        },
+      });
+      return;
+    }
+
+    setPendingSnapshots((previous) => ({
+      ...previous,
+      ...snapshotUpdates,
+    }));
+  }
+
+  function pilihRequest(requestId) {
+    setCheckerRequestId(requestId);
+    setAlasanTolak("");
+
+    if (!requestId || Object.keys(pendingSnapshots).length === 0) return;
+
+    const request = requests.find((item) => item.requestId === requestId);
+    onUpdateRequest(requestId, {
+      snapshots: {
+        ...request?.snapshots,
+        ...pendingSnapshots,
+      },
+    });
+    setPendingSnapshots({});
+  }
+
+  async function unggahDataKabel(file) {
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Format file tidak sesuai",
+        text: "Data Kabel Potongan harus berupa file CSV.",
+      });
+      return;
+    }
+
+    try {
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const [rawHeaders = [], ...rawRows] = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: "",
+        raw: false,
+      });
+      const headers = rawHeaders.map((header) =>
+        String(header).replace(/^\uFEFF/, "").trim()
+      );
+
+      if (headers.length !== dataKabelHeaders.length ||
+        !dataKabelHeaders.every((header, index) => headers[index] === header)) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Header CSV tidak sesuai",
+          text: `Gunakan template dengan kolom: ${dataKabelHeaders.join(", ")}.`,
+        });
+        return;
+      }
+
+      const rows = rawRows
+        .filter((row) => row.some((value) => String(value).trim() !== ""))
+        .map((row) => dataKabelHeaders.map((_, index) => String(row[index] ?? "")));
+
+      setDataKabelDraft({
+        file,
+        headers: dataKabelHeaders,
+        rows,
+      });
+    } catch (error) {
+      console.error("Gagal mengunggah Data Kabel Potongan:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal membaca Data Kabel Potongan",
+        text: error.message,
+      });
+    }
+  }
+
+  async function submitDataKabel() {
+    if (!dataKabelDraft || submittingSnapshot) return;
+
+    setSubmittingSnapshot("kabel");
+    try {
+      const insertedCount = await appendCsvRows(
+        "Data Kabel",
+        dataKabelDraft.headers,
+        dataKabelDraft.rows
+      );
+      simpanSnapshotData({
+        dataKabelPotongan: dataKabelDraft.file,
+        dataKabelPotonganRows: dataKabelDraft.rows,
+      });
+      setDataKabelDraft(null);
+      await Swal.fire({
+        icon: "success",
+        title: "Data Kabel tersimpan",
+        text: `${insertedCount} baris berhasil ditambahkan ke Supabase.`,
+      });
+    } catch (error) {
+      console.error("Gagal menyimpan Data Kabel Potongan ke Supabase:", error);
+      await Swal.fire({
+        icon: "error",
+        title: error.insertedCount > 0
+          ? "Sebagian Data Kabel tersimpan"
+          : "Gagal mengunggah Data Kabel",
+        text: error.insertedCount > 0
+          ? `${error.insertedCount} baris telah ditambahkan sebelum gagal. ${error.message}`
+          : `Periksa koneksi Supabase, nama tabel, kolom, dan izin insert. ${error.message}`,
+      });
+    } finally {
+      setSubmittingSnapshot("");
+    }
+  }
+
+  function unduhTemplateDataKabel() {
+    const csv = `\uFEFF${dataKabelHeaders.join(",")}\r\n`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "template-data-kabel-potongan.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function unduhTemplateDataStokSap() {
+    const csv = `\uFEFF${dataStokSapHeaders.join(",")}\r\n`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "template-data-stok-sap.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   function tutupPreview() {
     if (previewFile?.url) {
       URL.revokeObjectURL(previewFile.url);
@@ -118,7 +498,7 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
     }).format(date);
   }
 
-  function prosesChecker(status) {
+  async function prosesChecker(status) {
     if (!checkerDetail) return;
 
     if (status === "Ditolak Checker" && !alasanTolak) {
@@ -129,11 +509,19 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
     const label =
       status === "Disetujui Checker" ? "menyetujui" : "menolak";
 
-    const yakin = window.confirm(
-      `Yakin ingin ${label} ${checkerDetail.requestId}?`
-    );
+    const { isConfirmed } = await Swal.fire({
+      icon: "question",
+      title: "Konfirmasi Pemeriksaan",
+      text: `Yakin ingin ${label} ${checkerDetail.requestId}?`,
+      showCancelButton: true,
+      confirmButtonText: status === "Disetujui Checker" ? "Ya, Approve" : "Ya, Tolak",
+      cancelButtonText: "Batal",
+      confirmButtonColor: status === "Disetujui Checker" ? "#5c0b12" : "#b12f39",
+      cancelButtonColor: "#8f7f82",
+      reverseButtons: true,
+    });
 
-    if (!yakin) return;
+    if (!isConfirmed) return;
 
     onUpdateRequest(checkerDetail.requestId, {
       status:
@@ -148,6 +536,9 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
 
     setCheckerRequestId("");
     setAlasanTolak("");
+    if (status === "Disetujui Checker") {
+      onApproved?.();
+    }
   }
 
   return (
@@ -168,15 +559,45 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
         </div>
 
         <div className="checker-picker">
+          <div className="checker-detail-section checker-snapshot-section">
+            <h3>Snapshot Data</h3>
+            <p className="checker-snapshot-help">
+              Unggah snapshot untuk mendukung pemeriksaan. Detail pengajuan tetap dapat dilihat tanpa snapshot.
+            </p>
+            <div className="checker-snapshot-grid">
+              <SnapshotUpload
+                label="Data Stok SAP"
+                file={visibleSnapshots.dataStokSap}
+                onClick={() => setDataStokModalOpen(true)}
+              />
+              <div className="checker-snapshot-card">
+                <span>
+                  Data Kabel Potongan <span className="checker-snapshot-required">*</span>
+                </span>
+                <small>
+                  {visibleSnapshots.dataKabelPotongan?.name || "Belum ada file CSV"}
+                </small>
+                <button
+                  className="checker-snapshot-button"
+                  type="button"
+                  onClick={() => setDataKabelModalOpen(true)}
+                >
+                  {visibleSnapshots.dataKabelPotongan ? "Lihat / Ganti Data Kabel" : "Upload Data Kabel"}
+                </button>
+              </div>
+            </div>
+            {!checkerDetail && Object.keys(pendingSnapshots).length > 0 && (
+              <p className="checker-snapshot-help">
+                Snapshot yang diunggah sebelum memilih Request ID akan dipasangkan setelah request dipilih.
+              </p>
+            )}
+          </div>
           <div className="field">
             <label>Request ID</label>
 
             <select
               value={checkerRequestId}
-              onChange={(e) => {
-                setCheckerRequestId(e.target.value);
-                setAlasanTolak("");
-              }}
+              onChange={(e) => pilihRequest(e.target.value)}
             >
               <option value="">Pilih Request ID</option>
 
@@ -197,7 +618,7 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
             <div className="checker-empty-icon">⌕</div>
             <strong>Pilih pengajuan yang akan diperiksa</strong>
             <span>
-              Detail pengajuan akan langsung tampil setelah Request ID dipilih.
+              Pilih Request ID untuk melihat detail pengajuan.
             </span>
           </div>
         ) : (
@@ -323,27 +744,19 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
               <h3>Dokumen Pendukung</h3>
 
               <div
-                className={`checker-doc-grid ${
-                  checkerDetail.jenisPermintaan === "RECURRING"
-                    ? "single-doc"
-                    : ""
-                }`}
+                className="checker-doc-grid"
               >
-                {checkerDetail.jenisPermintaan === "KONSTRUKSI" && (
-                  <>
-                    <DocButton
-                      label="SPK"
-                      file={checkerDetail.files?.spk}
-                      onClick={() => bukaPreview(checkerDetail.files?.spk)}
-                    />
+                <DocButton
+                  label="SPK"
+                  file={checkerDetail.files?.spk}
+                  onClick={() => bukaPreview(checkerDetail.files?.spk)}
+                />
 
-                    <DocButton
-                      label="BOQ"
-                      file={checkerDetail.files?.boq}
-                      onClick={() => bukaPreview(checkerDetail.files?.boq)}
-                    />
-                  </>
-                )}
+                <DocButton
+                  label="BOQ"
+                  file={checkerDetail.files?.boq}
+                  onClick={() => bukaPreview(checkerDetail.files?.boq)}
+                />
 
                 <DocButton
                   label="BA"
@@ -446,22 +859,278 @@ function PemeriksaanChecker({ requests, onUpdateRequest }) {
           </div>
         </div>
       )}
+
+      {dataStokModalOpen && (
+        <div
+          className="checker-snapshot-overlay"
+          onClick={() => setDataStokModalOpen(false)}
+        >
+          <section
+            className="checker-snapshot-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="data-stok-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="checker-snapshot-modal-header">
+              <div>
+                <span>SNAPSHOT CSV</span>
+                <h2 id="data-stok-title">Data Stok SAP</h2>
+                <p>{checkerDetail ? `Request: ${checkerDetail.requestId}` : "Belum dipasangkan ke request"}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Tutup"
+                onClick={() => setDataStokModalOpen(false)}
+              >
+                ✕
+              </button>
+            </header>
+
+            <div className="checker-snapshot-modal-actions">
+              <button type="button" onClick={unduhTemplateDataStokSap}>
+                Download Template CSV
+              </button>
+              <label className="checker-snapshot-button">
+                {dataStokSapPreview.file ? "Ganti File CSV" : "Upload File CSV"}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(event) => {
+                    unggahDataStokSap(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+              {dataStokSapPreview.file && (
+                <small>{dataStokSapPreview.file.name}</small>
+              )}
+              {dataStokSapDraft && (
+                <button
+                  type="button"
+                  className="checker-snapshot-button"
+                  onClick={submitDataStokSap}
+                  disabled={Boolean(submittingSnapshot)}
+                >
+                  {submittingSnapshot === "sap" ? "Menyimpan..." : "Submit"}
+                </button>
+              )}
+            </div>
+            <p className="checker-snapshot-help">
+              Upload hanya untuk preview. Klik Submit untuk mengirim data ke Supabase.
+            </p>
+
+            {hasSapSnapshotData && (
+              <>
+                <h3 className="checker-snapshot-preview-title">
+                  Ringkasan stok berdasarkan gudang
+                </h3>
+                <div className="checker-snapshot-table-wrap">
+                  <table className="checker-snapshot-table">
+                    <thead>
+                      <tr>
+                        <th>Gudang</th>
+                        {sapSummaryMaterials.map(({ code, label }) => (
+                          <th key={code}>{label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sapSummary.length ? (
+                        sapSummary.map(({ warehouse, quantities }) => (
+                          <tr
+                            key={warehouse}
+                            className={warehouse === "Total" ? "checker-snapshot-total-row" : undefined}
+                          >
+                            <td>{warehouse}</td>
+                            {sapSummaryMaterials.map(({ code }) => (
+                              <td key={code}>
+                                {(quantities.get(code) || 0).toLocaleString("id-ID", {
+                                  maximumFractionDigits: 0,
+                                })}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={sapSummaryMaterials.length + 1}>
+                            Tidak ada data stok untuk material ADSS-12, ODP-SOLID-8-L, dan PIGTAIL-SC.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <h3 className="checker-snapshot-preview-title">Preview file CSV</h3>
+                <div className="checker-snapshot-table-wrap">
+                  <table className="checker-snapshot-table">
+                    <thead>
+                      <tr>
+                        {dataStokSapPreview.headers.map((header, index) => (
+                          <th key={`${header}-${index}`}>{header}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataStokSapPreview.rows.length ? (
+                        dataStokSapPreview.rows.map((row, rowIndex) => (
+                          <tr key={rowIndex}>
+                            {dataStokSapPreview.headers.map((header, columnIndex) => (
+                              <td key={`${header}-${columnIndex}`}>{row[columnIndex] ?? ""}</td>
+                            ))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={dataStokSapPreview.headers.length}>
+                            CSV valid, tidak ada baris data.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+
+      {dataKabelModalOpen && (
+        <div
+          className="checker-snapshot-overlay"
+          onClick={() => setDataKabelModalOpen(false)}
+        >
+          <section
+            className="checker-snapshot-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="data-kabel-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="checker-snapshot-modal-header">
+              <div>
+                <span>SNAPSHOT CSV</span>
+                <h2 id="data-kabel-title">Data Kabel Potongan</h2>
+                <p>{checkerDetail ? `Request: ${checkerDetail.requestId}` : "Belum dipasangkan ke request"}</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Tutup"
+                onClick={() => setDataKabelModalOpen(false)}
+              >
+                ✕
+              </button>
+            </header>
+
+            <div className="checker-snapshot-modal-actions">
+              <button type="button" onClick={unduhTemplateDataKabel}>
+                Download Template CSV
+              </button>
+              <label className="checker-snapshot-button">
+                {dataKabelPreview.file ? "Ganti File CSV" : "Upload File CSV"}
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(event) => {
+                    unggahDataKabel(event.target.files?.[0]);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+              {dataKabelPreview.file && (
+                <small>{dataKabelPreview.file.name}</small>
+              )}
+              {dataKabelDraft && (
+                <button
+                  type="button"
+                  className="checker-snapshot-button"
+                  onClick={submitDataKabel}
+                  disabled={Boolean(submittingSnapshot)}
+                >
+                  {submittingSnapshot === "kabel" ? "Menyimpan..." : "Submit"}
+                </button>
+              )}
+            </div>
+            <p className="checker-snapshot-help">
+              Upload hanya untuk preview. Klik Submit untuk mengirim data ke Supabase.
+            </p>
+
+            {dataKabelPreview.rows ? (
+              <div className="checker-snapshot-table-wrap">
+                <table className="checker-snapshot-table">
+                  <thead>
+                    <tr>{dataKabelHeaders.map((header) => <th key={header}>{header}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {dataKabelPreview.rows.length ? (
+                      dataKabelPreview.rows.map((row, rowIndex) => (
+                        <tr key={rowIndex}>
+                          {dataKabelHeaders.map((header, columnIndex) => (
+                            <td key={header}>{row[columnIndex]}</td>
+                          ))}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={dataKabelHeaders.length}>CSV valid, tidak ada baris data.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="checker-snapshot-empty">
+                Download template, isi datanya, lalu upload file CSV untuk melihat tabel.
+              </div>
+            )}
+          </section>
+        </div>
+      )}
     </>
   );
 }
 
-function DocButton({ label, file, onClick }) {
+function SnapshotUpload({ label, file, onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!file}
-      className={!file ? "doc-missing" : ""}
-    >
+    <div className="checker-snapshot-card">
+      <span>
+        {label} <span className="checker-snapshot-required">*</span>
+      </span>
+      <small>{file?.name || "Belum ada file CSV"}</small>
+      <button className="checker-snapshot-button" type="button" onClick={onClick}>
+        {file ? "Lihat / Ganti Data Stok" : "Upload Data Stok"}
+      </button>
+    </div>
+  );
+}
+
+function DocButton({ label, file, onClick }) {
+  function downloadFile() {
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  return (
+    <div className={`checker-doc-card ${!file ? "doc-missing" : ""}`}>
       <span>{label}</span>
       <small>{file?.name || "Dokumen belum tersedia"}</small>
-      <b>{file ? "Preview Dokumen" : "Tidak tersedia"}</b>
-    </button>
+      <div className="checker-doc-actions">
+        <button type="button" onClick={onClick} disabled={!file}>
+          Preview
+        </button>
+        <button type="button" onClick={downloadFile} disabled={!file}>
+          Download
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -1,0 +1,54 @@
+/* Login MIRA — isolated styles; does not override App.css */
+.mira-login-page,
+.mira-login-page * { box-sizing: border-box; }
+.mira-login-page { --mira-red:#650d19; --mira-red-dark:#4d0912; --mira-muted:#8d7b7f; --mira-border:#e6d5d8; display:grid; grid-template-columns: 43% minmax(0,1fr); min-height:100vh; width:100%; background:#f8f3f2; color:#28191c; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.mira-login-hero { min-height:100vh; position:relative; overflow:hidden; isolation:isolate; display:flex; flex-direction:column; padding:clamp(28px,5vw,75px) clamp(28px,5.2vw,84px) 27px; background:radial-gradient(ellipse at 65% 85%,#39151c 0,transparent 45%),linear-gradient(135deg,#171414,#271b1e 68%,#1b1517); color:#fff; }
+.mira-login-hero-content { position:relative; z-index:2; display:flex; flex:1; flex-direction:column; justify-content:center; }
+.mira-login-brand { display:flex; align-items:center; gap:20px; }
+.mira-login-brand-mark { flex:0 0 78px; width:78px; height:78px; display:grid; place-items:center; background:white; color:#6c101c; border-radius:21px; font-family:"DM Serif Display",Georgia,serif; font-size:48px; box-shadow:0 14px 34px #0004; }
+.mira-login-brand-wordmark { border-left:1px solid #7e656a; padding-left:20px; }
+.mira-login-brand-wordmark strong { display:block; line-height:1; font-family:"DM Serif Display",Georgia,serif; font-size:clamp(33px,3.2vw,56px); font-weight:400; }
+.mira-login-brand-wordmark strong span { color:#d6b6bc; }
+.mira-login-brand-wordmark small { display:block; margin-top:12px; font-size:10px; line-height:1.65; letter-spacing:.16em; color:#e6d9da; font-weight:650; }
+.mira-login-welcome { margin-top:clamp(54px,9vh,110px); }
+.mira-login-eyebrow { color:#c39a9f; letter-spacing:.2em; font-size:10px; font-weight:750; margin:0 0 16px; }
+.mira-login-welcome h1 { font-family:"DM Serif Display",Georgia,serif; font-weight:400; font-size:clamp(39px,4vw,64px); line-height:1.1; letter-spacing:-.02em; margin:0 0 20px; }
+.mira-login-welcome h1 span { color:#c08790; }
+.mira-login-welcome > p:last-child { color:#d6c8ca; max-width:460px; font-size:clamp(13px,1.2vw,16px); line-height:1.8; }
+.mira-login-features { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:clamp(35px,7vh,75px); }
+.mira-login-feature { text-align:center; min-width:0; }
+.mira-login-feature span { display:grid; place-items:center; width:49px; height:49px; margin:0 auto 10px; border-radius:13px; background:#ffffff12; border:1px solid #ffffff15; color:#f0e0e3; font-size:25px; }
+.mira-login-feature p { font-size:11px; line-height:1.5; color:#dfd1d3; margin:0; }
+.mira-login-wave { z-index:1; position:absolute; pointer-events:none; left:-20%; width:140%; height:180px; bottom:-85px; transform:rotate(6deg); border-top:2px solid #7a1728; border-radius:50% 55% 0 0; background:linear-gradient(10deg,#5d0c1b88,#370a1480); }
+.mira-login-hero-footer { z-index:2; margin:24px 0 0; font-size:9px; color:#aa999c; letter-spacing:.06em; }
+.mira-login-panel { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:20px; padding:40px clamp(20px,5vw,82px); background:radial-gradient(ellipse at 70% 40%,white 5%,#f8f2f2 75%); }
+.mira-login-card { width:min(100%,620px); padding:clamp(27px,4vw,60px); border:1px solid #e9dce0; border-radius:24px; background:#fffcfc; box-shadow:0 22px 60px #5a18251a,0 2px 8px #5a18250d; }
+.mira-login-tag { display:inline-flex; align-items:center; gap:9px; padding:10px 15px; border-radius:999px; color:var(--mira-red); background:#f6ecee; font-size:11px; font-weight:800; }
+.mira-login-tag span { font-size:17px; line-height:1; }
+.mira-login-card-eyebrow { margin:29px 0 7px; font-size:9px; font-weight:800; letter-spacing:.16em; color:#ac8990; }
+.mira-login-card h2 { margin:0; font-family:"DM Serif Display",Georgia,serif; color:var(--mira-red); font-weight:400; font-size:clamp(34px,3vw,52px); line-height:1.14; }
+.mira-login-description { font-size:13px; line-height:1.75; color:var(--mira-muted); margin:13px 0 28px; }
+.mira-login-form { display:flex; flex-direction:column; gap:21px; }
+.mira-login-field label { display:block; font-size:12px; font-weight:750; color:#3e3033; margin-bottom:9px; }
+.mira-login-field label span { color:#bc3641; }
+.mira-login-input-wrap { height:54px; display:flex; align-items:center; gap:12px; border:1px solid #d9c3c7; border-radius:11px; background:white; padding:0 15px; transition:.2s; }
+.mira-login-input-wrap:focus-within { border-color:var(--mira-red); box-shadow:0 0 0 3px #650d1910; }
+.mira-login-input-wrap > svg { width:20px; height:20px; flex:0 0 20px; color:#806c71; }
+.mira-login-input-wrap input { width:100%; height:100%; min-width:0; border:0; outline:0; color:#332629; font:inherit; font-size:13px; background:transparent; }
+.mira-login-input-wrap input::placeholder { color:#a7989b; }
+.mira-login-eye { width:34px; height:34px; display:grid; place-items:center; padding:6px; border:0; border-radius:7px; background:transparent; color:#7c676b; cursor:pointer; }
+.mira-login-eye:hover { background:#f7eeee; }
+.mira-login-eye svg { width:20px; height:20px; }
+.mira-login-submit { display:flex; align-items:center; justify-content:center; gap:14px; min-height:54px; width:100%; margin-top:5px; border:0; border-radius:11px; background:linear-gradient(100deg,#7a101e,#590a14); box-shadow:0 9px 20px #650d1925; color:white; font-size:14px; font-weight:800; cursor:pointer; transition:transform .2s,filter .2s; }
+.mira-login-submit span { font-size:19px; }
+.mira-login-submit:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.06); }
+.mira-login-submit:disabled { background:#c6bfc1; box-shadow:none; cursor:not-allowed; }
+.mira-login-alert { margin:0; border-radius:9px; padding:11px 13px; line-height:1.5; font-size:11px; }
+.mira-login-alert-error { border:1px solid #f0c2ca; background:#fff2f3; color:#ae2735; }
+.mira-login-alert-info { border:1px solid #cddde5; background:#f2f7fa; color:#426474; }
+.mira-login-bottom { margin-top:32px; padding-top:22px; border-top:1px solid #ebdedf; text-align:center; }
+.mira-login-bottom p { margin:0 0 6px; font-size:11px; color:#96868a; }
+.mira-login-bottom strong { font-size:12px; color:var(--mira-red); }
+.mira-login-copyright { font-size:10px; color:#a29296; margin:0; text-align:center; }
+@media(max-width:1050px) { .mira-login-page{grid-template-columns:38% 62%;} .mira-login-hero{padding:34px 27px 25px;} .mira-login-brand{gap:13px;} .mira-login-brand-mark{flex-basis:58px;width:58px;height:58px;font-size:36px;border-radius:15px;} .mira-login-brand-wordmark{padding-left:13px;} .mira-login-brand-wordmark small{font-size:8px;} .mira-login-features{grid-template-columns:repeat(2,1fr);} .mira-login-panel{padding:28px;} }
+@media(max-width:700px) { .mira-login-page{display:flex;flex-direction:column;} .mira-login-hero{min-height:0;padding:24px 22px 30px;} .mira-login-hero-content{display:block;} .mira-login-brand-mark{flex-basis:47px;width:47px;height:47px;font-size:29px;border-radius:12px;} .mira-login-brand-wordmark strong{font-size:28px;} .mira-login-brand-wordmark small{font-size:7px;margin-top:6px;} .mira-login-welcome{margin-top:26px;} .mira-login-eyebrow{font-size:8px;margin-bottom:7px;} .mira-login-welcome h1{font-size:32px;margin-bottom:8px;} .mira-login-welcome>p:last-child{font-size:11px;margin:0;} .mira-login-features,.mira-login-hero-footer{display:none;} .mira-login-panel{padding:25px 16px 30px;flex:1;} .mira-login-card{padding:25px 20px;border-radius:18px;} .mira-login-card-eyebrow{margin-top:22px;} .mira-login-card h2{font-size:34px;} }

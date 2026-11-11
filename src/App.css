@@ -1588,36 +1588,46 @@
 }
 
 .checker-material-table {
+  width: 100%;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 10px;
 }
 
 .checker-material-grid {
+  width: 100%;
+  min-width: 0;
   display: grid;
   grid-template-columns:
-    45px minmax(170px,1.5fr) minmax(80px,.6fr)
-    minmax(80px,.6fr) minmax(80px,.6fr) minmax(80px,.6fr);
-  gap: 8px;
+    minmax(24px, .45fr)
+    minmax(0, 1.4fr)
+    repeat(4, minmax(0, .65fr))
+    minmax(0, 1.2fr);
+  gap: 5px;
   align-items: center;
 }
 
 .checker-material-head {
   min-height: 40px;
-  padding: 0 11px;
+  padding: 0 7px;
   background: #efe3e4;
   color: var(--wine);
-  font-size: 8.5px;
+  font-size: 8px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .checker-material-row {
   min-height: 45px;
-  padding: 0 11px;
+  padding: 0 7px;
   border-top: 1px solid #f0e7e8;
   color: #5e5052;
-  font-size: 9.5px;
+  font-size: 9px;
+}
+
+.checker-material-grid > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .checker-match {
@@ -1669,6 +1679,286 @@
   margin-top: 4px;
   color: var(--wine-soft);
   font-size: 9px;
+}
+
+.checker-doc-card {
+  min-width: 0;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffafa;
+}
+
+.checker-doc-actions {
+  display: flex;
+  gap: 7px;
+  margin-top: 3px;
+}
+
+.checker-doc-grid .checker-doc-actions button {
+  padding: 6px 9px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--wine);
+  font-size: 8.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.checker-doc-grid .checker-doc-actions button:hover:not(:disabled) {
+  background: #f8eeee;
+}
+
+.checker-doc-grid .checker-doc-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.checker-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.checker-snapshot-card .checker-snapshot-required {
+  margin-left: 6px;
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.checker-snapshot-help {
+  margin: -3px 0 11px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.checker-snapshot-card {
+  min-width: 0;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fffafa;
+  cursor: pointer;
+}
+
+.checker-snapshot-card > span:first-child {
+  color: var(--wine);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.checker-snapshot-card small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checker-snapshot-card input,
+.checker-snapshot-modal-actions input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.checker-snapshot-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--wine);
+  font-family: inherit;
+  font-size: 8.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.checker-snapshot-card:focus-within .checker-snapshot-button {
+  outline: 2px solid var(--wine-soft);
+  outline-offset: 2px;
+}
+
+.checker-snapshot-modal-actions .checker-snapshot-button:focus-within {
+  outline: 2px solid var(--wine-soft);
+  outline-offset: 2px;
+}
+
+.checker-snapshot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 21000;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(31, 18, 20, .58);
+}
+
+.swal2-container {
+  z-index: 22000 !important;
+}
+
+.checker-snapshot-modal {
+  width: min(1100px, 100%);
+  max-height: min(88vh, 900px);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(30, 10, 13, .25);
+}
+
+.checker-snapshot-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.checker-snapshot-modal-header span {
+  color: #9a7479;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+
+.checker-snapshot-modal-header h2 {
+  margin: 4px 0;
+  color: var(--wine);
+  font-family: "DM Serif Display", serif;
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.checker-snapshot-modal-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.checker-snapshot-modal-header > button {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffafa;
+  color: var(--wine);
+  cursor: pointer;
+}
+
+.checker-snapshot-modal-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.checker-snapshot-modal-actions > button,
+.checker-snapshot-modal-actions > .checker-snapshot-button {
+  min-height: 36px;
+  padding: 8px 11px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: #fffafa;
+  color: var(--wine);
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.checker-snapshot-modal-actions small {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 9px;
+  overflow-wrap: anywhere;
+}
+
+.checker-snapshot-table-wrap {
+  min-height: 150px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.checker-snapshot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.checker-snapshot-table th,
+.checker-snapshot-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #f0e7e8;
+  text-align: left;
+}
+
+.checker-snapshot-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f2e4e6;
+  color: var(--wine);
+  font-weight: 800;
+}
+
+.checker-snapshot-table td {
+  color: var(--ink-soft);
+}
+
+.checker-snapshot-preview-title {
+  margin: 18px 0 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.checker-snapshot-table .checker-snapshot-total-row td {
+  background: #f8eff0;
+  color: var(--wine);
+  font-weight: 800;
+}
+
+.checker-snapshot-empty {
+  min-height: 150px;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
 }
 
 .checker-note {
@@ -1729,18 +2019,27 @@
     grid-template-columns: 1fr;
   }
 
+  .checker-snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .checker-snapshot-overlay {
+    padding: 10px;
+  }
+
+  .checker-snapshot-modal {
+    max-height: 94vh;
+    padding: 16px;
+  }
+
   .checker-request-card,
   .checker-request-side {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .checker-material-table {
-    overflow-x: auto;
-  }
-
   .checker-material-grid {
-    min-width: 700px;
+    gap: 4px;
   }
 }
 
@@ -1804,13 +2103,10 @@
 
 .checker-material-grid {
   grid-template-columns:
-    42px
-    minmax(170px, 1.5fr)
-    minmax(70px, .6fr)
-    minmax(70px, .6fr)
-    minmax(70px, .6fr)
-    minmax(70px, .6fr)
-    minmax(110px, .8fr);
+    minmax(24px, .45fr)
+    minmax(0, 1.4fr)
+    repeat(4, minmax(0, .65fr))
+    minmax(0, 1.2fr);
 }
 
 .checker-row-warning {
@@ -1869,12 +2165,21 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .checker-material-table {
-    overflow-x: auto;
+  .checker-material-grid {
+    gap: 3px;
+    font-size: 8px;
   }
 
-  .checker-material-grid {
-    min-width: 820px;
+  .checker-material-head {
+    font-size: 7px;
+  }
+
+  .material-check-status {
+    min-height: 0;
+    padding: 4px 3px;
+    border-radius: 6px;
+    font-size: 7px;
+    white-space: normal;
   }
 }
 
@@ -1951,6 +2256,30 @@
 
 .checker-workspace {
   padding: 26px 30px 30px;
+}
+
+.checker-workspace .checker-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+
+.checker-workspace .checker-snapshot-section {
+  margin-top: 0;
+}
+
+.checker-workspace .checker-snapshot-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.checker-workspace .checker-snapshot-card {
+  padding: 12px;
+  gap: 7px;
+}
+
+.checker-workspace .compact-empty {
+  min-height: 150px;
 }
 
 .checker-intro.compact {

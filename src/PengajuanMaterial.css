@@ -90,8 +90,8 @@
 .pengajuan-refined .pengajuan-reference-footer strong { color:#6a444d; font-weight:750; }
 .pengajuan-refined .pengajuan-old-request-empty { margin:14px 0 18px; }
 /* Material grid including validation */
-.pengajuan-refined .material-table { overflow-x:auto; border:1px solid #e7d8da; border-radius:12px; }
-.pengajuan-refined .material-grid { width:100%; min-width:800px; display:grid; grid-template-columns:38px minmax(180px,2.1fr) minmax(68px,.68fr) minmax(92px,.8fr) minmax(92px,.8fr) minmax(105px,1fr) 43px; gap:9px; align-items:center; }
+.pengajuan-refined .material-table { width:100%; overflow:hidden; border:1px solid #e7d8da; border-radius:12px; }
+.pengajuan-refined .material-grid { width:100%; min-width:0; display:grid; grid-template-columns:minmax(22px,.4fr) minmax(0,2fr) minmax(0,.65fr) minmax(0,.75fr) minmax(0,.75fr) minmax(0,1fr) 32px; gap:7px; align-items:center; }
 .pengajuan-refined .material-head { background:#f0e5e7; color:#6b1721; font-size:8.5px; letter-spacing:.45px; }
 .pengajuan-refined .material-row { min-height:63px; padding:10px; }
 .pengajuan-refined .material-row:nth-child(odd) { background:#fefbfb; }
@@ -112,7 +112,6 @@
 /* History typography */
 .pengajuan-history-card .pengajuan-history-header { border-bottom:1px solid #f0e4e6; padding-bottom:17px; }
 .pengajuan-history-card .pengajuan-history-count { font-size:10px; }
-@media(max-width:1000px){ .pengajuan-refined .material-grid { min-width:850px; } }
 @media(max-width:780px){ .pengajuan-refined { padding:21px 17px; } .pengajuan-refined .pengajuan-reference-meta { grid-template-columns:repeat(2,minmax(0,1fr)); } .pengajuan-refined .pengajuan-reference-meta > div:nth-child(2) { border-right:0; } .pengajuan-refined .pengajuan-row.pengajuan-three-cols, .pengajuan-refined .pengajuan-row.pengajuan-two-cols { grid-template-columns:1fr; } }
 @media(max-width:520px){ .pengajuan-refined .pengajuan-old-request-title { align-items:flex-start; flex-direction:column; } .pengajuan-refined .pengajuan-reference-meta { grid-template-columns:1fr; } .pengajuan-refined .pengajuan-reference-meta > div { border-right:0; } }
 
@@ -243,16 +242,36 @@
 
 /* Material section: clean table header and better vertical alignment. */
 .pengajuan-refined .material-table {
+  overflow-x: hidden;
   border-radius: 11px;
   border-color: #e7dbdd;
 }
 .pengajuan-refined .material-grid {
-  min-width: 870px;
+  min-width: 0;
   grid-template-columns:
-    34px minmax(185px,2.3fr) minmax(66px,.7fr)
-    minmax(87px,.85fr) minmax(87px,.85fr)
-    minmax(105px,1fr) 42px;
-  gap: 10px;
+    minmax(20px,.4fr)
+    minmax(0,2fr)
+    minmax(0,.6fr)
+    minmax(0,.72fr)
+    minmax(0,.72fr)
+    minmax(0,.9fr)
+    28px;
+  gap: clamp(2px, .7vw, 7px);
+}
+.pengajuan-refined .material-grid > * {
+  min-width: 0;
+}
+.request-material-detail-table {
+  overflow-x: auto;
+}
+.request-material-detail-grid {
+  min-width: 640px;
+  grid-template-columns: 46px minmax(180px, 1.7fr) repeat(3, minmax(90px, .7fr));
+}
+.pengajuan-refined .material-row select,
+.pengajuan-refined .material-row input {
+  padding-right: 5px;
+  padding-left: 5px;
 }
 .pengajuan-refined .material-head {
   min-height: 46px;
@@ -277,6 +296,8 @@
 .pengajuan-refined .pengajuan-status-pill {
   padding: 7px 10px;
   font-size: 8.5px;
+  white-space: normal;
+  text-align: center;
 }
 .pengajuan-refined .secondary-btn {
   min-height: 40px;
@@ -308,4 +329,14 @@
   .pengajuan-refined .pengajuan-old-request-title { flex-direction: column; align-items: flex-start; }
   .pengajuan-refined .pengajuan-reference-meta { grid-template-columns: 1fr; }
   .pengajuan-refined .pengajuan-section-header { align-items: flex-start; }
+  .pengajuan-refined .material-grid {
+    min-width: 0;
+    grid-template-columns: 20px minmax(0,1.8fr) minmax(0,.55fr) repeat(2,minmax(0,.75fr)) minmax(0,.85fr) 24px;
+    gap: 3px;
+  }
+  .pengajuan-refined .material-head { font-size: 6.5px; letter-spacing: 0; }
+  .pengajuan-refined .material-row { padding: 8px 4px; }
+  .pengajuan-refined .material-row select,
+  .pengajuan-refined .material-row input { height: 36px; font-size: 8px; }
+  .pengajuan-refined .pengajuan-status-pill { padding: 4px 3px; font-size: 6.5px; }
 }

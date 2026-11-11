@@ -5,6 +5,7 @@ import PemeriksaanChecker from "./PemeriksaanChecker";
 import EvaluasiManager from "./EvaluasiManager";
 import MonitoringProyek from "./MonitoringProyek";
 import RiwayatAktivitas from "./RiwayatAktivitas";
+import Login from "./lib/Login";
 
 const navItems = [
   ["dashboard", "Dashboard", "▣"],
@@ -19,6 +20,88 @@ const navItems = [
 // Penyimpanan prototype berbasis IndexedDB: mendukung objek File PDF/Excel.
 const MIRA_DB_NAME = "mira_inventory_local";
 const MIRA_STORE_NAME = "state";
+const MODERN_REQUEST_ID = /^(KONS|REC)-(B|P)-(\d{8})-(\d+)$/;
+const LEGACY_REQUEST_ID = /^REQ-(\d{8})-(\d+)$/;
+
+function migrateLegacyRequestIds(requests) {
+  const maxSequences = new Map();
+  const legacyRequests = [];
+
+  requests.forEach((request, index) => {
+    const modernMatch = request.requestId?.match(MODERN_REQUEST_ID);
+    if (modernMatch) {
+      const [, typeCode, requestTypeCode, dateKey, sequence] = modernMatch;
+      const counterKey = `mira_request_counter_${typeCode}-${requestTypeCode}_${dateKey}`;
+      maxSequences.set(
+        counterKey,
+        Math.max(maxSequences.get(counterKey) || 0, Number(sequence))
+      );
+      return;
+    }
+
+    const legacyMatch = request.requestId?.match(LEGACY_REQUEST_ID);
+    if (!legacyMatch) return;
+
+    const typeCode = request.jenisPermintaan === "KONSTRUKSI"
+      ? "KONS"
+      : request.jenisPermintaan === "RECURRING"
+      ? "REC"
+      : null;
+    const requestTypeCode = request.jenisPengajuan === "BARU"
+      ? "B"
+      : request.jenisPengajuan === "PENGGANTI"
+      ? "P"
+      : null;
+    if (!typeCode || !requestTypeCode) return;
+
+    legacyRequests.push({
+      index,
+      oldId: request.requestId,
+      typeCode,
+      requestTypeCode,
+      dateKey: legacyMatch[1],
+      oldSequence: Number(legacyMatch[2]),
+    });
+  });
+
+  for (const [counterKey, idSequence] of maxSequences) {
+    maxSequences.set(
+      counterKey,
+      Math.max(idSequence, Number(localStorage.getItem(counterKey)) || 0)
+    );
+  }
+
+  legacyRequests.sort((a, b) =>
+    a.dateKey.localeCompare(b.dateKey) ||
+    a.oldSequence - b.oldSequence ||
+    a.index - b.index
+  );
+
+  const migratedIds = new Map();
+  for (const legacy of legacyRequests) {
+    const prefix = `${legacy.typeCode}-${legacy.requestTypeCode}`;
+    const counterKey = `mira_request_counter_${prefix}_${legacy.dateKey}`;
+    const nextSequence = (maxSequences.get(counterKey) || 0) + 1;
+    maxSequences.set(counterKey, nextSequence);
+    migratedIds.set(
+      legacy.oldId,
+      `${prefix}-${legacy.dateKey}-${String(nextSequence).padStart(3, "0")}`
+    );
+  }
+
+  for (const [counterKey, sequence] of maxSequences) {
+    localStorage.setItem(counterKey, String(sequence));
+  }
+
+  if (migratedIds.size === 0) return requests;
+
+  return requests.map((request) => ({
+    ...request,
+    requestId: migratedIds.get(request.requestId) || request.requestId,
+    noReqDiganti: migratedIds.get(request.noReqDiganti) || request.noReqDiganti,
+    digantiOleh: migratedIds.get(request.digantiOleh) || request.digantiOleh,
+  }));
+}
 
 function openMiraDB() {
   return new Promise((resolve, reject) => {
@@ -40,7 +123,10 @@ async function readStoredRequests() {
     return await new Promise((resolve, reject) => {
       const transaction = db.transaction(MIRA_STORE_NAME, "readonly");
       const request = transaction.objectStore(MIRA_STORE_NAME).get("requests");
-      request.onsuccess = () => resolve(Array.isArray(request.result) ? request.result : []);
+      request.onsuccess = () => {
+        const storedRequests = Array.isArray(request.result) ? request.result : [];
+        resolve(migrateLegacyRequestIds(storedRequests));
+      };
       request.onerror = () => reject(request.error);
     });
   } finally {
@@ -64,6 +150,7 @@ async function saveStoredRequests(requests) {
 }
 
 function App() {
+  const [showLogin, setShowLogin] = useState(true);
   const [activeMenu, setActiveMenu] = useState("pengajuan");
   const [requests, setRequests] = useState([]);
   const [requestsReady, setRequestsReady] = useState(false);
@@ -131,6 +218,8 @@ function App() {
       ? "Input permintaan material dan dokumen pendukung."
       : "Modul MIRA Inventory Excellence.";
 
+  if (showLogin) return <Login onContinuePreview={() => setShowLogin(false)} />;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -182,7 +271,7 @@ function App() {
 
             <div>
               <strong>Administrator</strong>
-              <span>PT MIRA Indonesia</span>
+              <span>IAM</span>
             </div>
 
             <div className="admin-arrow">›</div>
@@ -221,6 +310,7 @@ function App() {
           <PemeriksaanChecker
             requests={requests}
             onUpdateRequest={updateRequest}
+            onApproved={() => setActiveMenu("manager")}
           />
         )}
 

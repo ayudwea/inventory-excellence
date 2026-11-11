@@ -2,6 +2,7 @@ import { useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import "./PengajuanMaterial.css";
+import { getDummyStock } from "./data/masterStokDummy";
 
 const pekerjaanKonstruksi = [
   "JPP",
@@ -43,7 +44,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [pekerjaan, setPekerjaan] = useState("");
 
   const [materials, setMaterials] = useState([
-    { kode: "", satuan: "", baQty: "", boqQty: "" },
+    { kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" },
   ]);
 
   const [files, setFiles] = useState({
@@ -67,11 +68,21 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const requestSudahDiganti = new Set(
     requests.map((r) => r.noReqDiganti).filter(Boolean)
   );
+  const tipeRequestCode = jenisPermintaan === "KONSTRUKSI"
+    ? "KONS"
+    : jenisPermintaan === "RECURRING"
+    ? "REC"
+    : "";
   const daftarRequestBelumPR = requests.filter((r) => {
     const prStatus = String(r.statusPR ?? r.prStatus ?? "Belum PR").trim().toLowerCase();
     const belumPR = ["belum pr", "belum dibuat", "belum dibuat pr"].includes(prStatus);
     const tidakAdaNomorPR = !(r.noPR || r.nomorPR);
+    const tipeRequestSama = !!tipeRequestCode && (
+      r.requestId?.startsWith(`${tipeRequestCode}-`) ||
+      (r.jenisPermintaan || r.tipePermintaan) === jenisPermintaan
+    );
     return belumPR && tidakAdaNomorPR && !requestSudahDiganti.has(r.requestId)
+      && tipeRequestSama
       && r.status !== "Diganti" && r.status !== "Ditolak Checker"
       && r.status !== "Ditolak Manager";
   });
@@ -115,7 +126,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   function tambahMaterial() {
     setMaterials((prev) => [
       ...prev,
-      { kode: "", satuan: "", baQty: "", boqQty: "" },
+      { kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" },
     ]);
   }
 
@@ -144,11 +155,13 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
         if (field === "kode") {
           const master = sampleMaterial.find((m) => m.kode === value);
+          const stock = getDummyStock(gudang, value);
 
           return {
             ...item,
             kode: value,
             satuan: master?.satuan || "",
+            sapQty: stock?.sapQty ?? null,
           };
         }
 
@@ -240,7 +253,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     setExcelPreview([]);
   }
 
-  function generateRequestId() {
+  function generateRequestId(jenisPermintaan, jenisPengajuan) {
     const now = new Date();
 
     const yyyy = now.getFullYear();
@@ -248,13 +261,16 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     const dd = String(now.getDate()).padStart(2, "0");
     const dateKey = `${yyyy}${mm}${dd}`;
 
-    const storageKey = `mira_request_counter_${dateKey}`;
+    const tipeCode = jenisPermintaan === "KONSTRUKSI" ? "KONS" : "REC";
+    const pengajuanCode = jenisPengajuan === "BARU" ? "B" : "P";
+    const codePrefix = `${tipeCode}-${pengajuanCode}`;
+    const storageKey = `mira_request_counter_${codePrefix}_${dateKey}`;
     const lastNumber = Number(localStorage.getItem(storageKey) || 0);
     const nextNumber = lastNumber + 1;
 
     localStorage.setItem(storageKey, String(nextNumber));
 
-    return `REQ-${dateKey}-${String(nextNumber).padStart(3, "0")}`;
+    return `${codePrefix}-${dateKey}-${String(nextNumber).padStart(3, "0")}`;
   }
 
   function materialSudahDipilihDiBarisLain(kodeMaterial, rowIndex) {
@@ -272,7 +288,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     setGudang("");
     setPekerjaan("");
     setMaterials([
-      { kode: "", satuan: "", baQty: "", boqQty: "" },
+      { kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" },
     ]);
     setFiles({
       spk: null,
@@ -289,7 +305,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     setGudang("");
     setPekerjaan("");
     setMaterials([
-      { kode: "", satuan: "", baQty: "", boqQty: "" },
+      { kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" },
     ]);
     setFiles({
       spk: null,
@@ -321,7 +337,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
     if (!isConfirmed) return;
 
-    const requestId = generateRequestId();
+    const requestId = generateRequestId(jenisPermintaan, jenisPengajuan);
     const now = new Date();
 
     const tanggalInput = `${now.getFullYear()}-${String(
@@ -338,7 +354,10 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
       statusPR: "Belum PR",
       gudang,
       pekerjaan,
-      materials: materials.map((item) => ({ ...item })),
+      materials: materials.map((item) => ({
+        ...item,
+        sapQty: getDummyStock(gudang, item.kode)?.sapQty ?? null,
+      })),
       files: { ...files },
       status: "Menunggu Pemeriksaan Checker",
       catatanChecker: "",
@@ -740,8 +759,8 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
                   <h3>Daftar Material</h3>
                 </div>
 
-                <div className="detail-material-table">
-                  <div className="detail-material-head detail-material-grid">
+                <div className="detail-material-table request-material-detail-table">
+                  <div className="detail-material-head detail-material-grid request-material-detail-grid">
                     <div>No</div>
                     <div>Kode Material</div>
                     <div>Satuan</div>
@@ -751,7 +770,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
                   {submittedDetail.materials.map((item, index) => (
                     <div
-                      className="detail-material-row detail-material-grid"
+                      className="detail-material-row detail-material-grid request-material-detail-grid"
                       key={`${item.kode}-${index}`}
                     >
                       <div>{index + 1}</div>

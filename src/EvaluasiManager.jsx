@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import * as XLSX from "xlsx";
 import "./EvaluasiManager.css";
+import { getDummyStock } from "./data/masterStokDummy";
 
 const alasanTolakManagerOptions = [
   "Data Pengajuan Belum Sesuai",
@@ -10,12 +10,15 @@ const alasanTolakManagerOptions = [
   "Pengajuan Belum Dapat Diproses",
 ];
 
+function normalizeMaterialCode(value) {
+  const code = String(value ?? "").trim();
+  return /^\d+$/.test(code) ? code.replace(/^0+(?=\d)/, "") : code;
+}
+
 function EvaluasiManager({ requests, onUpdateRequest }) {
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [catatanManager, setCatatanManager] = useState("");
   const [alasanTolak, setAlasanTolak] = useState("");
-  const [previewFile, setPreviewFile] = useState(null);
-  const [excelPreview, setExcelPreview] = useState([]);
 
   const waitingRequests = useMemo(
     () =>
@@ -32,6 +35,32 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
       ) || null,
     [waitingRequests, selectedRequestId]
   );
+
+  const sapQtyByMaterial = useMemo(() => {
+    const headers = detail?.snapshots?.dataStokSapHeaders || [];
+    const rows = detail?.snapshots?.dataStokSapRows || [];
+    const materialIndex = headers.indexOf("Material");
+    const unrestrictedIndex = headers.indexOf("Unrestricted");
+    const quantities = new Map();
+
+    if (materialIndex < 0 || unrestrictedIndex < 0) return quantities;
+
+    rows.forEach((row) => {
+      const materialCode = normalizeMaterialCode(row[materialIndex]);
+      const rawQuantity = String(row[unrestrictedIndex] ?? "").trim();
+      if (!materialCode || !rawQuantity) return;
+
+      const quantity = Number(rawQuantity.replace(/,/g, ""));
+      if (!Number.isFinite(quantity)) return;
+
+      quantities.set(
+        materialCode,
+        (quantities.get(materialCode) || 0) + quantity
+      );
+    });
+
+    return quantities;
+  }, [detail]);
 
   const stats = useMemo(() => {
     if (!detail) {
@@ -76,55 +105,6 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
     }).format(date);
   }
 
-  async function bukaPreview(file) {
-    if (!file) return;
-
-    const ext = file.name.split(".").pop()?.toLowerCase();
-
-    if (ext === "pdf") {
-      setExcelPreview([]);
-      setPreviewFile({
-        type: "pdf",
-        file,
-        url: URL.createObjectURL(file),
-      });
-      return;
-    }
-
-    if (ext === "xls" || ext === "xlsx") {
-      try {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-
-        const rows = XLSX.utils.sheet_to_json(sheet, {
-          header: 1,
-          defval: "",
-        });
-
-        setExcelPreview(rows);
-        setPreviewFile({
-          type: "excel",
-          file,
-          url: null,
-        });
-      } catch (error) {
-        console.error(error);
-        alert("File Excel gagal dibaca.");
-      }
-    }
-  }
-
-  function tutupPreview() {
-    if (previewFile?.url) {
-      URL.revokeObjectURL(previewFile.url);
-    }
-
-    setPreviewFile(null);
-    setExcelPreview([]);
-  }
-
   function prosesManager(action) {
     if (!detail) return;
 
@@ -155,6 +135,30 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
     setSelectedRequestId("");
     setAlasanTolak("");
     setCatatanManager("");
+  }
+
+  function updateManagerMaterial(index, field, value) {
+    if (!detail) return;
+
+    onUpdateRequest(detail.requestId, {
+      materials: detail.materials.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      ),
+    });
+  }
+
+  function managerMaterialInput(item, index, field, label) {
+    const value = item[field] ?? item[field.toUpperCase()] ?? "";
+    return (
+      <input
+        className="manager-material-input"
+        aria-label={`${label} material ${item.kode || index + 1}`}
+        value={value}
+        onChange={(event) =>
+          updateManagerMaterial(index, field, event.target.value)
+        }
+      />
+    );
   }
 
   return (
@@ -288,107 +292,58 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                   <div>No</div>
                   <div>Kode Material</div>
                   <div>Satuan</div>
-                  <div>BA QTY</div>
                   <div>BOQ QTY</div>
-                  <div>Selisih</div>
-                  <div>Status</div>
+                  <div>BA QTY</div>
+                  <div>LOT_SIZE</div>
+                  <div>MONTHLY_DEMAND</div>
+                  <div>ROP</div>
+                  <div>EOQ</div>
+                  <div>SAP_QTY</div>
+                  <div>PO_QTY</div>
+                  <div>PR_QTY</div>
+                  <div>TOTAL</div>
+                  <div>GAP</div>
                   <div>Pemenuhan</div>
                   <div>PO</div>
                   <div>TAG</div>
-                  <div>Donor</div>
+                  <div>DONOR</div>
                 </div>
 
                 {detail.materials.map((item, index) => {
-                  const ba = Number(item.baQty || 0);
-                  const boq = Number(item.boqQty || 0);
-                  const selisih = ba - boq;
-                  const sesuai = selisih === 0;
+                  const sapQty =
+                    sapQtyByMaterial.get(normalizeMaterialCode(item.kode)) ??
+                    item.sapQty ??
+                    item.sap_qty ??
+                    item.SAP_QTY ??
+                    getDummyStock(detail.gudang, item.kode)?.sapQty ??
+                    "—";
 
                   return (
                     <div
-                      className={`checker-material-grid checker-material-row ${
-                        sesuai ? "" : "checker-row-warning"
-                      }`}
+                      className="checker-material-grid checker-material-row"
                       key={`${item.kode}-${index}`}
                     >
                       <div>{index + 1}</div>
                       <div>{item.kode || "-"}</div>
                       <div>{item.satuan || "-"}</div>
-                      <div>{ba}</div>
-                      <div>{boq}</div>
-
-                      <div
-                        className={
-                          sesuai
-                            ? "checker-match"
-                            : "checker-difference"
-                        }
-                      >
-                        {selisih > 0 ? `+${selisih}` : selisih}
-                      </div>
-
-                      <div>
-                        <span
-                          className={`material-check-status ${
-                            sesuai ? "ok" : "warning"
-                          }`}
-                        >
-                          {sesuai ? "✓ Sesuai" : "⚠ Tidak Sesuai"}
-                        </span>
-                      </div>
-
-                      <div className="manager-value-cell">
-                        {item.pemenuhan ?? item.PEMENUHAN ?? "-"}
-                      </div>
-
-                      <div className="manager-value-cell">
-                        {item.po ?? item.PO ?? "-"}
-                      </div>
-
-                      <div className="manager-value-cell">
-                        {item.tag ?? item.TAG ?? "-"}
-                      </div>
-
-                      <div className="manager-donor-cell">
-                        {item.donor ?? item.DONOR ?? "-"}
-                      </div>
+                      <div>{item.boqQty ?? item.BOQ_QTY ?? "-"}</div>
+                      <div>{item.baQty ?? item.BA_QTY ?? "-"}</div>
+                      <div>{item.lotSize ?? item.lot_size ?? item.LOT_SIZE ?? "-"}</div>
+                      <div>{item.monthlyDemand ?? item.monthly_demand ?? item.MONTHLY_DEMAND ?? "-"}</div>
+                      <div>{item.rop ?? item.ROP ?? "-"}</div>
+                      <div>{item.eoq ?? item.EOQ ?? "-"}</div>
+                      <div>{sapQty}</div>
+                      <div>{item.poQty ?? item.po_qty ?? item.PO_QTY ?? "-"}</div>
+                      <div>{item.prQty ?? item.pr_qty ?? item.PR_QTY ?? "-"}</div>
+                      <div>{item.total ?? item.TOTAL ?? "-"}</div>
+                      <div>{item.gap ?? item.GAP ?? "-"}</div>
+                      <div className="manager-value-cell">{managerMaterialInput(item, index, "pemenuhan", "Pemenuhan")}</div>
+                      <div className="manager-value-cell">{managerMaterialInput(item, index, "po", "PO")}</div>
+                      <div className="manager-value-cell">{managerMaterialInput(item, index, "tag", "TAG")}</div>
+                      <div className="manager-donor-cell">{managerMaterialInput(item, index, "donor", "Donor")}</div>
                     </div>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="checker-detail-section">
-              <h3>Dokumen Pendukung</h3>
-
-              <div
-                className={`checker-doc-grid ${
-                  detail.jenisPermintaan === "RECURRING"
-                    ? "single-doc"
-                    : ""
-                }`}
-              >
-                {detail.jenisPermintaan === "KONSTRUKSI" && (
-                  <>
-                    <DocButton
-                      label="SPK"
-                      file={detail.files?.spk}
-                      onClick={() => bukaPreview(detail.files?.spk)}
-                    />
-
-                    <DocButton
-                      label="BOQ"
-                      file={detail.files?.boq}
-                      onClick={() => bukaPreview(detail.files?.boq)}
-                    />
-                  </>
-                )}
-
-                <DocButton
-                  label="BA"
-                  file={detail.files?.ba}
-                  onClick={() => bukaPreview(detail.files?.ba)}
-                />
               </div>
             </div>
 
@@ -459,71 +414,7 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
         )}
       </section>
 
-      {previewFile && (
-        <div className="preview-overlay" onClick={tutupPreview}>
-          <div
-            className="preview-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="preview-header">
-              <div>
-                <h3>Preview Dokumen</h3>
-                <p>{previewFile.file.name}</p>
-              </div>
-
-              <button
-                type="button"
-                className="preview-close"
-                onClick={tutupPreview}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="preview-content">
-              {previewFile.type === "pdf" && (
-                <iframe
-                  src={previewFile.url}
-                  title="Preview PDF"
-                  className="preview-frame"
-                />
-              )}
-
-              {previewFile.type === "excel" && (
-                <div className="excel-preview">
-                  <table>
-                    <tbody>
-                      {excelPreview.map((row, rowIndex) => (
-                        <tr key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <td key={cellIndex}>{String(cell)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
-  );
-}
-
-function DocButton({ label, file, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!file}
-      className={!file ? "doc-missing" : ""}
-    >
-      <span>{label}</span>
-      <small>{file?.name || "Dokumen belum tersedia"}</small>
-      <b>{file ? "Preview Dokumen" : "Tidak tersedia"}</b>
-    </button>
   );
 }
 

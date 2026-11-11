@@ -129,6 +129,17 @@ export default function RiwayatAktivitas({ requests = [] }) {
                 <div><span>Status PR</span><strong>{detail.statusPR || detail.prStatus || (detail.noPR ? "Sudah PR" : "Belum PR")}</strong></div>
                 <div><span>Total Material</span><strong>{detail.materials?.length || 0} item</strong></div>
               </div>
+              {(detail.catatanChecker || detail.alasanTolakManager) && (
+                <div className="detail-section">
+                  <div className="detail-section-title"><h3>Alasan Ditolak</h3></div>
+                  {detail.catatanChecker && (
+                    <p><strong>Checker:</strong> {detail.catatanChecker}</p>
+                  )}
+                  {detail.alasanTolakManager && (
+                    <p><strong>Manager:</strong> {detail.alasanTolakManager}</p>
+                  )}
+                </div>
+              )}
               <div className="detail-section">
                 <div className="detail-section-title"><h3>Daftar Material</h3></div>
                 <div className="detail-material-table">
