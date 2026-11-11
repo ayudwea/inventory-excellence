@@ -4,21 +4,6 @@ import Swal from "sweetalert2";
 import "./PengajuanMaterial.css";
 import { getDummyStock } from "./data/masterStokDummy";
 
-const pekerjaanKonstruksi = [
-  "JPP",
-  "PT 3",
-  "PT 2",
-  "PT 4",
-  "CNOP/ Node B",
-  "HEM",
-  "OLO",
-  "MTEL",
-  "MyRep",
-  "Surge",
-];
-
-const pekerjaanRecurring = ["QE AKSES", "QE RECOVERY", "QE OLO"];
-
 const tipeOptions = ["KONSTRUKSI", "RECURRING"];
 const MAX_FILE_SIZE = 1024 * 1024;
 
@@ -57,13 +42,6 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [excelPreview, setExcelPreview] = useState([]);
   const [successModal, setSuccessModal] = useState(null);
   const [submittedDetail, setSubmittedDetail] = useState(null);
-
-  const pekerjaanOptions =
-    jenisPermintaan === "KONSTRUKSI"
-      ? pekerjaanKonstruksi
-      : jenisPermintaan === "RECURRING"
-      ? pekerjaanRecurring
-      : [];
 
   const requestSudahDiganti = new Set(
     requests.map((r) => r.noReqDiganti).filter(Boolean)
@@ -473,18 +451,14 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
                 id="nama-pekerjaan"
                 className="pengajuan-pekerjaan-input"
                 type="text"
-                list="mira-pekerjaan-suggestions"
                 value={pekerjaan}
                 onChange={(e) => setPekerjaan(e.target.value)}
-                placeholder={jenisPermintaan ? "Ketik nama pekerjaan, contoh: JPP" : "Pilih tipe permintaan terlebih dahulu"}
+                placeholder={jenisPermintaan ? "Masukkan nama pekerjaan" : "Pilih tipe permintaan terlebih dahulu"}
                 disabled={!jenisPermintaan}
                 maxLength={100}
                 autoComplete="off"
                 required
               />
-              <datalist id="mira-pekerjaan-suggestions">
-                {pekerjaanOptions.map((item) => <option key={item} value={item} />)}
-              </datalist>
             </div>
           </div>
         </section>
