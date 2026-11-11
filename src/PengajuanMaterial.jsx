@@ -117,7 +117,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     (jenisPengajuan === "PENGGANTI" && !!noReqDiganti &&
       daftarRequestBelumPR.some((r) => r.requestId === noReqDiganti));
   const canSubmit = !!jenisPermintaan && !!jenisPengajuan && !!gudang &&
-    !!pekerjaan && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap;
+    !!pekerjaan.trim() && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap;
   const mismatchRows = materials.filter((m) =>
     m.baQty !== "" && m.boqQty !== "" &&
     Number(m.baQty) !== Number(m.boqQty)
@@ -353,7 +353,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
       noReqDiganti: jenisPengajuan === "PENGGANTI" ? noReqDiganti : "",
       statusPR: "Belum PR",
       gudang,
-      pekerjaan,
+      pekerjaan: pekerjaan.trim(),
       materials: materials.map((item) => ({
         ...item,
         sapQty: getDummyStock(gudang, item.kode)?.sapQty ?? null,
@@ -468,12 +468,23 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
               </select>
             </div>
             <div className="field">
-              <label>Nama Pekerjaan <span>*</span></label>
-              <select value={pekerjaan} onChange={(e) => setPekerjaan(e.target.value)}
-                disabled={!jenisPermintaan}>
-                <option value="">{jenisPermintaan ? "Pilih nama pekerjaan" : "Pilih tipe permintaan terlebih dahulu"}</option>
-                {pekerjaanOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              <label htmlFor="nama-pekerjaan">Nama Pekerjaan <span>*</span></label>
+              <input
+                id="nama-pekerjaan"
+                className="pengajuan-pekerjaan-input"
+                type="text"
+                list="mira-pekerjaan-suggestions"
+                value={pekerjaan}
+                onChange={(e) => setPekerjaan(e.target.value)}
+                placeholder={jenisPermintaan ? "Ketik nama pekerjaan, contoh: JPP" : "Pilih tipe permintaan terlebih dahulu"}
+                disabled={!jenisPermintaan}
+                maxLength={100}
+                autoComplete="off"
+                required
+              />
+              <datalist id="mira-pekerjaan-suggestions">
+                {pekerjaanOptions.map((item) => <option key={item} value={item} />)}
+              </datalist>
             </div>
           </div>
         </section>
