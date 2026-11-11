@@ -13,6 +13,21 @@ function formatNamaPekerjaan(value) {
     .replace(/\bPT\s*(\d+)\b/g, "PT $1");
 }
 
+// Format final wajib: kapital, satu spasi, hanya karakter nama pekerjaan yang disetujui.
+// Kode PT 2, PT2, atau pt  2 diseragamkan oleh formatNamaPekerjaan().
+function validasiNamaPekerjaan(value) {
+  if (!value.trim()) return "Nama pekerjaan wajib diisi.";
+  if (value.length < 2) return "Nama pekerjaan minimal 2 karakter.";
+  if (value.length > 100) return "Nama pekerjaan maksimal 100 karakter.";
+  if (value !== formatNamaPekerjaan(value).trim()) {
+    return "Gunakan huruf kapital dan satu spasi antar kata.";
+  }
+  if (!/^[A-Z0-9][A-Z0-9 /&().-]*[A-Z0-9)]$/.test(value)) {
+    return "Hanya boleh huruf A–Z, angka, spasi, /, &, (, ), titik, atau tanda hubung. Mulai dengan huruf/angka.";
+  }
+  return "";
+}
+
 const tipeOptions = ["KONSTRUKSI", "RECURRING"];
 const MAX_FILE_SIZE = 1024 * 1024;
 
@@ -103,8 +118,9 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const requestPenggantiValid = jenisPengajuan === "BARU" ||
     (jenisPengajuan === "PENGGANTI" && !!noReqDiganti &&
       daftarRequestBelumPR.some((r) => r.requestId === noReqDiganti));
+  const namaPekerjaanError = validasiNamaPekerjaan(pekerjaan);
   const canSubmit = !!jenisPermintaan && !!jenisPengajuan && !!gudang &&
-    !!pekerjaan.trim() && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap;
+    !namaPekerjaanError && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap;
   const mismatchRows = materials.filter((m) =>
     m.baQty !== "" && m.boqQty !== "" &&
     Number(m.baQty) !== Number(m.boqQty)
@@ -306,7 +322,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) {
-      alert("Pengajuan belum lengkap atau QTY BA dan QTY BOQ tidak sesuai. Periksa seluruh data dan dokumen (maksimal 1 MB).");
+      alert(namaPekerjaanError || "Pengajuan belum lengkap atau QTY BA dan QTY BOQ tidak sesuai. Periksa seluruh data dan dokumen (maksimal 1 MB).");
       return;
     }
 
@@ -458,7 +474,9 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
               <label htmlFor="nama-pekerjaan">Nama Pekerjaan <span>*</span></label>
               <input
                 id="nama-pekerjaan"
-                className="pengajuan-pekerjaan-input"
+                className={`pengajuan-pekerjaan-input ${pekerjaan && namaPekerjaanError ? "pengajuan-pekerjaan-invalid" : ""}`}
+                aria-invalid={Boolean(pekerjaan && namaPekerjaanError)}
+                aria-describedby="mira-pekerjaan-format-help"
                 type="text"
                 value={pekerjaan}
                 onChange={(e) => setPekerjaan(formatNamaPekerjaan(e.target.value))}
@@ -469,7 +487,13 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
                 autoComplete="off"
                 required
               />
-              <small className="pengajuan-helper">Otomatis HURUF KAPITAL dan spasi rapi. Pekerjaan baru boleh diketik.</small>
+              <small id="mira-pekerjaan-format-help" className="pengajuan-helper">
+                Wajib HURUF KAPITAL, spasi tunggal, dan tanpa simbol selain / & ( ) . -.
+                Pekerjaan baru tetap boleh diketik.
+              </small>
+              {pekerjaan && namaPekerjaanError && (
+                <small className="pengajuan-pekerjaan-error" role="alert">{namaPekerjaanError}</small>
+              )}
             </div>
           </div>
         </section>
