@@ -340,3 +340,30 @@
   .pengajuan-refined .material-row input { height: 36px; font-size: 8px; }
   .pengajuan-refined .pengajuan-status-pill { padding: 4px 3px; font-size: 6.5px; }
 }
+
+/* Nama Pekerjaan: input dengan placeholder dan suggestion browser */
+.pengajuan-refined .field .pengajuan-pekerjaan-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  border: 1px solid #dfcdd1;
+  border-radius: 10px;
+  background: #fff;
+  color: #5d5052;
+  font-family: inherit;
+  font-size: 10.5px;
+  box-sizing: border-box;
+}
+.pengajuan-refined .field .pengajuan-pekerjaan-input::placeholder {
+  color: #a5999b;
+}
+.pengajuan-refined .field .pengajuan-pekerjaan-input:focus {
+  outline: none;
+  border-color: #8b3b45;
+  box-shadow: 0 0 0 3px rgba(92,11,18,.075);
+}
+.pengajuan-refined .field .pengajuan-pekerjaan-input:disabled {
+  cursor: not-allowed;
+  background: #f8f6f6;
+  border-color: #eee5e6;
+}
