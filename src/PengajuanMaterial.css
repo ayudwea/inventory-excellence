@@ -367,3 +367,17 @@
   background: #f8f6f6;
   border-color: #eee5e6;
 }
+
+/* Validasi format Nama Pekerjaan */
+.pengajuan-refined .field .pengajuan-pekerjaan-input.pengajuan-pekerjaan-invalid {
+  border-color: #c83f49;
+  background: #fff9f9;
+}
+.pengajuan-refined .pengajuan-pekerjaan-error {
+  display: block;
+  margin-top: 7px;
+  color: #b72835;
+  font-size: 10px;
+  line-height: 1.45;
+  font-weight: 650;
+}
