@@ -5,7 +5,6 @@ import PemeriksaanChecker from "./PemeriksaanChecker";
 import EvaluasiManager from "./EvaluasiManager";
 import MonitoringProyek from "./MonitoringProyek";
 import RiwayatAktivitas from "./RiwayatAktivitas";
-import Login from "./lib/Login";
 
 const navItems = [
   ["dashboard", "Dashboard", "▣"],
@@ -150,8 +149,7 @@ async function saveStoredRequests(requests) {
 }
 
 function App() {
-  const [showLogin, setShowLogin] = useState(true);
-  const [activeMenu, setActiveMenu] = useState("pengajuan");
+  const [activeMenu, setActiveMenu] = useState("dashboard");
   const [requests, setRequests] = useState([]);
   const [requestsReady, setRequestsReady] = useState(false);
 
@@ -217,8 +215,6 @@ function App() {
       : activeMenu === "pengajuan"
       ? "Input permintaan material dan dokumen pendukung."
       : "Modul MIRA Inventory Excellence.";
-
-  if (showLogin) return <Login onContinuePreview={() => setShowLogin(false)} />;
 
   return (
     <div className="app-shell">
