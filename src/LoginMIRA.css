@@ -1,0 +1,51 @@
+/* MIRA login demo — scoped styles */
+.mira-login,.mira-login *{box-sizing:border-box}
+.mira-login{--login-wine:#660c17;--login-ink:#21191b;--login-muted:#8b777b;min-height:100vh;display:grid;grid-template-columns:minmax(340px,42%) minmax(0,58%);background:#faf7f6;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:var(--login-ink)}
+.mira-login-brand{position:relative;overflow:hidden;background:radial-gradient(circle at 10% 90%,#52121d 0%,transparent 40%),linear-gradient(150deg,#292122,#171112 75%);color:#fff}
+.mira-login-brand::after{content:"";position:absolute;width:125%;height:220px;left:-10%;bottom:-115px;border-radius:50% 55% 0 0;transform:rotate(11deg);background:linear-gradient(90deg,rgba(127,17,35,.83),rgba(76,10,22,.28))}
+.mira-login-brand-inner{min-height:100vh;position:relative;z-index:1;padding:clamp(32px,5vw,80px) clamp(28px,5vw,72px);display:flex;flex-direction:column;justify-content:space-between}
+.mira-login-logo-row{display:flex;align-items:center;gap:20px}
+.mira-login-monogram{width:76px;height:76px;border-radius:20px;display:grid;place-items:center;flex-shrink:0;background:#fff;color:var(--login-wine);font:48px/1 Georgia,serif}
+.mira-login-wordmark{font:54px/.95 Georgia,'Times New Roman',serif;letter-spacing:-.02em}
+.mira-login-wordmark span{color:#dfbcc3}
+.mira-login-fullname{margin-top:12px;font-size:10px;letter-spacing:.2em;line-height:1.7;color:#d2c0c2}
+.mira-login-welcome{padding:54px 0}
+.mira-login-eyebrow{color:#b99a9f;font-size:10px;font-weight:800;letter-spacing:.18em}
+.mira-login-welcome h1{margin:18px 0 14px;font:54px/1.08 Georgia,serif;letter-spacing:-.03em}
+.mira-login-welcome p{margin:0;max-width:440px;color:#d9cbce;line-height:1.7;font-size:15px}
+.mira-login-capabilities{margin-top:46px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.mira-login-capabilities>div{min-width:0}
+.mira-login-capabilities span{display:grid;place-items:center;width:48px;height:48px;background:#39282c;border-radius:12px;font-size:24px;margin-bottom:10px}
+.mira-login-capabilities strong{font-size:11px;line-height:1.45;font-weight:600;color:#e5dadd}
+.mira-login-brand-bottom{color:#ad9297;font-size:10px;letter-spacing:.15em}
+.mira-login-right{padding:45px 5vw 22px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:22px}
+.mira-login-card{width:min(100%,630px);padding:clamp(24px,4vw,52px);background:#fff;border:1px solid #eadadc;border-radius:24px;box-shadow:0 24px 72px rgba(66,7,16,.08)}
+.mira-login-tag{display:inline-flex;padding:9px 14px;border-radius:100px;color:var(--login-wine);background:#f8eeee;font-weight:750;font-size:11px}
+.mira-login-kicker{margin-top:26px;font-size:10px;color:#9a7880;font-weight:850;letter-spacing:.14em}
+.mira-login-card h2{margin:8px 0;font:46px/1.1 Georgia,serif;letter-spacing:-.025em;color:var(--login-wine)}
+.mira-login-lead{color:var(--login-muted);font-size:13px;line-height:1.7;margin:0 0 22px}
+.mira-login-demo-banner{background:#faf0f1;border:1px solid #efdbde;color:#823740;border-radius:10px;padding:11px 13px;font-size:11px;line-height:1.4;margin-bottom:24px}
+.mira-login form>label{display:block;font-size:12px;font-weight:800;margin:16px 0 8px}
+.mira-login form>label span{color:#bf343f}
+.mira-login-control{display:flex;align-items:center;min-height:52px;border:1px solid #dac8cb;border-radius:11px;transition:.2s;background:#fff}
+.mira-login-control:focus-within{border-color:var(--login-wine);box-shadow:0 0 0 3px rgba(102,12,23,.07)}
+.mira-login-input-icon{width:45px;text-align:center;color:#947f83;font-size:20px}
+.mira-login-control input{border:0;outline:0;flex:1;min-width:0;width:100%;height:50px;font:inherit;font-size:13px;color:var(--login-ink);background:transparent}
+.mira-login-control input::placeholder{color:#a69699}
+.mira-login-eye{background:none;border:0;margin:0 12px;color:var(--login-wine);font-size:11px;font-weight:750;cursor:pointer}
+.mira-login-hint{margin-top:6px;font-size:10px;color:#99888c}
+.mira-login-options{margin:18px 0 22px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.mira-login-remember{display:flex;align-items:center;gap:7px;font-size:11px;cursor:pointer}
+.mira-login-remember input{accent-color:var(--login-wine)}
+.mira-login-forgot{color:#99878b;font-size:10px}
+.mira-login-error{color:#a52f3a;background:#fff0f1;border-radius:8px;padding:10px;font-size:11px}
+.mira-login-submit{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;height:50px;background:linear-gradient(90deg,#7f111e,#590a13);color:#fff;border:0;border-radius:10px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 8px 18px rgba(102,12,23,.13)}
+.mira-login-submit:disabled{background:#c7c1c2;cursor:not-allowed;box-shadow:none}
+.mira-login-submit:not(:disabled):hover{filter:brightness(1.08)}
+.mira-login-footnote{color:#a08d91;text-align:center;font-size:10px;line-height:1.6;margin:16px 0 0}
+.mira-login-copyright{font-size:10px;text-align:center;color:#aa979a}
+@media(max-width:980px){.mira-login{grid-template-columns:1fr}.mira-login-brand-inner{min-height:170px;padding:25px 30px}.mira-login-welcome,.mira-login-brand-bottom{display:none}.mira-login-logo-row{gap:14px}.mira-login-monogram{width:52px;height:52px;font-size:34px;border-radius:14px}.mira-login-wordmark{font-size:36px}.mira-login-fullname{font-size:8px;margin-top:4px}.mira-login-right{padding:25px 18px;min-height:calc(100vh - 170px)}.mira-login-card{max-width:650px}}
+@media(max-width:580px){.mira-login-brand-inner{min-height:125px}.mira-login-right{padding:18px 12px;min-height:calc(100vh - 125px)}.mira-login-card{padding:24px 18px;border-radius:16px}.mira-login-card h2{font-size:36px}.mira-login-options{align-items:flex-start;flex-direction:column}}
+.mira-demo-session{position:fixed;z-index:9999;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;padding:8px 9px 8px 12px;border-radius:12px;background:#2e2023;color:#fff;box-shadow:0 9px 24px rgba(0,0,0,.22);font:700 10px Inter,sans-serif}
+.mira-demo-session button{padding:8px 12px;border:0;border-radius:8px;background:#8b1a28;color:#fff;cursor:pointer;font:inherit}
+.mira-demo-session button:hover{background:#a52a39}
