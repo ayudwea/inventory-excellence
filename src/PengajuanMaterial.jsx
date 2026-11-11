@@ -4,6 +4,15 @@ import Swal from "sweetalert2";
 import "./PengajuanMaterial.css";
 import { getDummyStock } from "./data/masterStokDummy";
 
+// Standar penamaan untuk laporan/dashboard: bebas jenis pekerjaannya, seragam formatnya.
+function formatNamaPekerjaan(value) {
+  return String(value || "")
+    .toLocaleUpperCase("id-ID")
+    .replace(/\s+/g, " ")
+    .replace(/^\s+/, "")
+    .replace(/\bPT\s*(\d+)\b/g, "PT $1");
+}
+
 const tipeOptions = ["KONSTRUKSI", "RECURRING"];
 const MAX_FILE_SIZE = 1024 * 1024;
 
@@ -42,23 +51,6 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [excelPreview, setExcelPreview] = useState([]);
   const [successModal, setSuccessModal] = useState(null);
   const [submittedDetail, setSubmittedDetail] = useState(null);
-
-  // Saran diambil dari Nama Pekerjaan pengajuan yang pernah disimpan.
-  // Input tetap bebas: pengguna boleh mengetik pekerjaan baru.
-  const historiPekerjaan = Array.from(
-    new Map(
-      requests
-        .filter((r) => !jenisPermintaan || (r.jenisPermintaan || r.tipePermintaan) === jenisPermintaan)
-        .map((r) => String(r.pekerjaan || "").trim())
-        .filter(Boolean)
-        .map((nama) => [nama.toLocaleLowerCase("id-ID"), nama])
-    ).values()
-  );
-  const placeholderPekerjaan = !jenisPermintaan
-    ? "Pilih tipe permintaan terlebih dahulu"
-    : historiPekerjaan.length
-      ? `Ketik nama pekerjaan, mis. ${historiPekerjaan[0]}`
-      : "Ketik nama pekerjaan baru";
 
   const requestSudahDiganti = new Set(
     requests.map((r) => r.noReqDiganti).filter(Boolean)
@@ -348,7 +340,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
       noReqDiganti: jenisPengajuan === "PENGGANTI" ? noReqDiganti : "",
       statusPR: "Belum PR",
       gudang,
-      pekerjaan: pekerjaan.trim(),
+      pekerjaan: formatNamaPekerjaan(pekerjaan).trim(),
       materials: materials.map((item) => ({
         ...item,
         sapQty: getDummyStock(gudang, item.kode)?.sapQty ?? null,
@@ -468,20 +460,16 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
                 id="nama-pekerjaan"
                 className="pengajuan-pekerjaan-input"
                 type="text"
-                list="mira-histori-pekerjaan"
                 value={pekerjaan}
-                onChange={(e) => setPekerjaan(e.target.value)}
-                placeholder={placeholderPekerjaan}
+                onChange={(e) => setPekerjaan(formatNamaPekerjaan(e.target.value))}
+                onBlur={() => setPekerjaan((prev) => formatNamaPekerjaan(prev).trim())}
+                placeholder={jenisPermintaan ? "Contoh: JPP, PT 2, PEKERJAAN BARU" : "Pilih tipe permintaan terlebih dahulu"}
                 disabled={!jenisPermintaan}
                 maxLength={100}
                 autoComplete="off"
                 required
               />
-              <datalist id="mira-histori-pekerjaan">
-                {historiPekerjaan.map((nama) => (
-                  <option key={nama} value={nama} />
-                ))}
-              </datalist>
+              <small className="pengajuan-helper">Otomatis HURUF KAPITAL dan spasi rapi. Pekerjaan baru boleh diketik.</small>
             </div>
           </div>
         </section>
