@@ -1,0 +1,21 @@
+/* Shared confirm dialogs visually aligned to the success modal in App.css. */
+.mira-confirm-container { z-index: 21000 !important; padding: 24px !important; background: rgba(17,10,11,.68) !important; backdrop-filter: blur(5px); }
+.mira-confirm-popup { box-sizing:border-box !important; width:min(460px,94vw) !important; padding:34px 32px 28px !important; border:0 !important; border-radius:18px !important; background:#fff !important; box-shadow:0 28px 80px rgba(0,0,0,.30) !important; }
+.mira-confirm-popup .mira-confirm-icon { display:flex !important; align-items:center !important; justify-content:center !important; width:58px !important; height:58px !important; margin:0 auto 18px !important; border-radius:50% !important; border:2px solid #9bbcca !important; color:#83a8bb !important; background:#f1f8fa !important; font-size:27px !important; }
+.mira-confirm-popup .mira-confirm-icon .swal2-icon-content { font-size:32px !important; font-weight:650 !important; }
+.mira-confirm-popup .mira-confirm-title { padding:0 !important; margin:0 0 16px !important; font-family:"DM Serif Display",serif !important; font-size:28px !important; font-weight:400 !important; line-height:1.2 !important; color:var(--ink,#332a2c) !important; }
+.mira-confirm-popup .mira-confirm-text { margin:0 auto 6px !important; padding:0 !important; max-width:380px; font-family:inherit !important; font-size:12px !important; line-height:1.65 !important; color:var(--ink-soft,#62565a) !important; }
+.mira-confirm-popup .mira-confirm-actions { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px !important; width:100%; margin:25px 0 0 !important; }
+.mira-confirm-popup .mira-confirm-actions button { box-sizing:border-box; min-height:42px; margin:0 !important; padding:9px 14px !important; border-radius:9px !important; font-family:inherit !important; font-size:11px !important; font-weight:800 !important; cursor:pointer; transition:background .18s ease,border-color .18s ease; }
+.mira-confirm-primary { color:#fff !important; background:var(--wine,#5c0b12) !important; border:1px solid var(--wine,#5c0b12) !important; }
+.mira-confirm-primary:hover { background:var(--wine-dark,#46080f) !important; }
+.mira-confirm-primary.mira-confirm-danger { background:#ac3540 !important; border-color:#ac3540 !important; }
+.mira-confirm-primary.mira-confirm-danger:hover { background:#8c2530 !important; }
+.mira-confirm-secondary { color:var(--wine,#5c0b12) !important; background:#fff !important; border:1px solid var(--line-2,#e4d1d4) !important; }
+.mira-confirm-secondary:hover { background:var(--blush-2,#fff3f4) !important; }
+.mira-confirm-popup .mira-confirm-actions button:focus-visible { outline:3px solid rgba(108,42,54,.25); outline-offset:2px; }
+.mira-confirm-enter { animation: miraConfirmIn .2s ease-out; }
+.mira-confirm-leave { animation: miraConfirmOut .14s ease-in forwards; }
+@keyframes miraConfirmIn { from { opacity:0; transform:translateY(8px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes miraConfirmOut { to { opacity:0; transform:translateY(6px) scale(.99); } }
+@media (max-width:480px) { .mira-confirm-popup { padding:28px 20px 22px !important; } .mira-confirm-popup .mira-confirm-title { font-size:24px !important; } .mira-confirm-popup .mira-confirm-actions { gap:8px !important; } }
