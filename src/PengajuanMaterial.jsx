@@ -499,11 +499,14 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
     } else {
       onCreateRequest(payload);
     }
-    try {
-      await hapusDraftPengajuan();
-      setDraftTersimpan(null);
-    } catch (error) {
-      console.error("Draft tersimpan belum dapat dihapus:", error);
+    // Draft normal tetap aman ketika PIC sedang mengirim revisi request lama.
+    if (!sedangRevisiId) {
+      try {
+        await hapusDraftPengajuan();
+        setDraftTersimpan(null);
+      } catch (error) {
+        console.error("Draft tersimpan belum dapat dihapus:", error);
+      }
     }
     if (!sedangRevisiId && jenisPengajuan === "PENGGANTI" && onUpdateRequest) {
       onUpdateRequest(noReqDiganti, {
