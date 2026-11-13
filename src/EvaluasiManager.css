@@ -652,3 +652,49 @@
 .manager-evaluation-table .manager-material-input:focus,.manager-decision-select:focus { outline:0; border-color:#7b3240; box-shadow:0 0 0 3px rgba(106,28,42,.10); }
 .manager-table-footnote { margin:12px 0 0; color:#9b8388; font-size:10px; line-height:1.6; }
 @media(max-width:780px) { .manager-material-heading { align-items:flex-start; flex-direction:column; } .manager-decision-summary>div { flex:1 1 140px; } .manager-evaluation-table thead th,.manager-evaluation-table td { padding:10px 9px; } }
+
+
+/* UX enhancement: search, draft, checklist, preview and confirmation */
+.manager-table-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+.manager-table-tools input,.manager-table-tools select { height:38px; min-width:155px; padding:0 12px; border-radius:8px; border:1px solid #e4d0d4; background:#fff; font:inherit; font-size:11px; color:#593e46; }
+.manager-table-tools input { flex:1 1 230px; max-width:450px; }
+.manager-table-tools select { flex:0 1 190px; }
+.manager-table-tools span { margin-left:auto; font-size:10px; color:#9e858b; white-space:nowrap; }
+.manager-evaluation-table .manager-no-results { text-align:center; padding:30px 20px; font-weight:650; color:#93777e; }
+.manager-save-bar { margin-top:13px; padding:12px 15px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; border:1px solid #ebdadd; background:#fffafa; border-radius:10px; }
+.manager-save-bar span { font-size:11px; color:#8c6570; }
+.manager-save-bar button { border:1px solid #6c2938; background:#6c2938; color:white; border-radius:8px; padding:10px 15px; font-size:11px; font-weight:800; cursor:pointer; }
+.manager-save-bar button:disabled { opacity:.45; cursor:not-allowed; }
+.manager-document-list { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.manager-document-list button { display:flex; min-width:0; flex-direction:column; align-items:flex-start; gap:8px; padding:15px; border:1px solid #e8d5d9; background:#fffafb; border-radius:10px; text-align:left; font:inherit; cursor:pointer; }
+.manager-document-list button strong { color:#713342; font-size:11px; }
+.manager-document-list button span { min-width:0; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#79696d; font-size:10px; }
+.manager-document-list button b { color:#7b3241; font-size:10px; }
+.manager-document-list button:disabled { opacity:.48; cursor:not-allowed; }
+.manager-document-list button:not(:disabled):hover { border-color:#9c6571; background:#fff4f5; }
+.manager-validation { background:#fdfafb; border:1px solid #eee1e4; border-radius:12px; padding:18px; }
+.manager-validation-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+.manager-validation-grid p { margin:0; padding:12px 13px; font-size:11px; font-weight:750; border-radius:8px; }
+.manager-validation-grid p.passed { background:#eef8f1; color:#25673f; }
+.manager-validation-grid p.failed { background:#fff1f2; color:#aa3948; }
+.manager-validation-note { color:#ac4653; font-weight:750; margin:13px 0 0; font-size:11px; }
+.manager-validation-help { font-size:10px; line-height:1.65; color:#89767b; margin:13px 0 0; }
+.manager-workspace .checker-approve-btn:disabled { opacity:.4; cursor:not-allowed; }
+.manager-workspace .checker-approve-btn:disabled:hover { background:var(--wine); }
+.manager-preview-modal { width:min(980px,94vw); max-height:88vh; }
+.manager-preview-modal .preview-content { max-height:72vh; overflow:auto; }
+.manager-preview-modal .excel-preview { overflow:auto; }
+.manager-preview-modal .excel-preview table { border-collapse:collapse; font-size:11px; }
+.manager-preview-modal .excel-preview td { border:1px solid #e7d9dc; padding:7px 11px; white-space:nowrap; }
+.manager-confirm-modal { width:min(650px,94vw); }
+.manager-approval-summary { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin:18px 0; }
+.manager-approval-summary>div { padding:13px 10px; background:#fff5f6; border:1px solid #ebdadd; border-radius:9px; }
+.manager-approval-summary span { display:block; font-size:9px; color:#8b6d74; }
+.manager-approval-summary strong { display:block; margin-top:6px; color:#672535; font-size:19px; }
+.manager-confirm-note { font-size:11px; color:#74656a; margin:12px 0 18px; line-height:1.55; }
+.manager-confirm-approve { background:#692737!important; color:#fff!important; border-color:#692737!important; }
+@media(max-width:760px) {
+ .manager-document-list,.manager-validation-grid { grid-template-columns:1fr; }
+ .manager-approval-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .manager-table-tools span { margin-left:0; width:100%; }
+}
