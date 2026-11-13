@@ -140,7 +140,7 @@ export default function MonitoringProyek({ requests = [] }) {
                         ))}
                       </div>
                     )}
-                    {request.catatanManager && <p className="mira-monitor-next">Catatan Manager: {request.catatanManager}</p>
+                    {request.catatanManager && <p className="mira-monitor-next">Catatan Manager: {request.catatanManager}</p>}
                     {request.checkedAt && <p className="mira-monitor-meta">Diperiksa Checker: {tanggal(request.checkedAt)}</p>}
                     {request.managerEvaluatedAt && <p className="mira-monitor-meta">Dievaluasi Manager: {tanggal(request.managerEvaluatedAt)}</p>}
                   </div>
