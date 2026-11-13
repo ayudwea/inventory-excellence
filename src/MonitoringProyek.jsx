@@ -129,7 +129,18 @@ export default function MonitoringProyek({ requests = [] }) {
                     {!state.stopped && state.index < 4 && (
                       <p className="mira-monitor-next">Tahap berikutnya: <strong>{STEPS[Math.min(state.index + 1, 4)].label}</strong>. Status akan diperbarui saat proses berlanjut.</p>
                     )}
-                    {request.catatanManager && <p className="mira-monitor-next">Catatan Manager: {request.catatanManager}</p>}
+                    {Array.isArray(request.revisionHistory) && request.revisionHistory.length > 0 && (
+                      <div className="mira-monitor-revisions">
+                        <strong>Riwayat Revisi ({request.revisionHistory.length})</strong>
+                        {request.revisionHistory.map((revision, index) => (
+                          <div key={`${revision.submittedAt || index}-${index}`}>
+                            <span>Revisi #{revision.revision || index + 1} · {tanggal(revision.submittedAt)}</span>
+                            <small>Alasan sebelumnya: {revision.alasanChecker || "Tidak ada catatan Checker"}</small>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {request.catatanManager && <p className="mira-monitor-next">Catatan Manager: {request.catatanManager}</p>
                     {request.checkedAt && <p className="mira-monitor-meta">Diperiksa Checker: {tanggal(request.checkedAt)}</p>}
                     {request.managerEvaluatedAt && <p className="mira-monitor-meta">Dievaluasi Manager: {tanggal(request.managerEvaluatedAt)}</p>}
                   </div>
