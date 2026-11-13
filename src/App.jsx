@@ -17,6 +17,14 @@ const navItems = [
   ["riwayat", "Riwayat Aktivitas", "☷"],
 ];
 
+// Penyaringan menu hanya untuk UX. Otorisasi data wajib tetap ditegakkan oleh RLS/API.
+const menuByRole = {
+  pic: ["dashboard", "pengajuan", "monitoring", "riwayat"],
+  checker: ["dashboard", "checker", "monitoring", "riwayat"],
+  manager: ["dashboard", "manager", "pemenuhan", "monitoring", "riwayat"],
+  admin: navItems.map(([key]) => key),
+};
+
 // Penyimpanan prototype berbasis IndexedDB: mendukung objek File PDF/Excel.
 const MIRA_DB_NAME = "mira_inventory_local";
 const MIRA_STORE_NAME = "state";
@@ -149,8 +157,10 @@ async function saveStoredRequests(requests) {
   }
 }
 
-function App() {
+function App({ currentRole = 'admin' }) {
   const [activeMenu, setActiveMenu] = useState("dashboard");
+  const allowedMenus = menuByRole[currentRole] || menuByRole.pic;
+  const visibleNavItems = navItems.filter(([key]) => allowedMenus.includes(key));
   const [requests, setRequests] = useState([]);
   const [requestsReady, setRequestsReady] = useState(false);
   const [revisionRequestId, setRevisionRequestId] = useState(null);
@@ -187,6 +197,7 @@ function App() {
   }, []);
 
   function bukaRevisi(requestId) {
+    if (!allowedMenus.includes("pengajuan")) return;
     const request = requests.find((item) => item.requestId === requestId);
     if (request?.status !== "Ditolak Checker") return;
     setRevisionRequestId(requestId);
@@ -194,6 +205,7 @@ function App() {
   }
 
   function pindahMenu(menu) {
+    if (!allowedMenus.includes(menu)) return;
     setActiveMenu(menu);
     if (menu !== "pengajuan") setRevisionRequestId(null);
   }
@@ -253,7 +265,7 @@ function App() {
           <div className="menu-label">MENU UTAMA</div>
 
           <nav className="nav-menu">
-            {navItems.map(([id, label, icon]) => (
+            {visibleNavItems.map(([id, label, icon]) => (
               <button
                 key={id}
                 type="button"
@@ -308,11 +320,11 @@ function App() {
           </div>
         )}
 
-        {requestsReady && activeMenu === "dashboard" && (
+        {requestsReady && allowedMenus.includes("dashboard") && activeMenu === "dashboard" && (
           <DashboardPIC requests={requests} onMenuChange={pindahMenu} onReviseRequest={bukaRevisi} />
         )}
 
-        {requestsReady && activeMenu === "pengajuan" && (
+        {requestsReady && allowedMenus.includes("pengajuan") && activeMenu === "pengajuan" && (
           <PengajuanMaterial
             onCreateRequest={tambahRequest}
             requests={requests}
@@ -322,7 +334,7 @@ function App() {
           />
         )}
 
-        {requestsReady && activeMenu === "checker" && (
+        {requestsReady && allowedMenus.includes("checker") && activeMenu === "checker" && (
           <PemeriksaanChecker
             requests={requests}
             onUpdateRequest={updateRequest}
@@ -330,19 +342,19 @@ function App() {
           />
         )}
 
-        {requestsReady && activeMenu === "manager" && (
+        {requestsReady && allowedMenus.includes("manager") && activeMenu === "manager" && (
           <EvaluasiManager requests={requests} onUpdateRequest={updateRequest} />
         )}
 
-        {requestsReady && activeMenu === "riwayat" && (
+        {requestsReady && allowedMenus.includes("riwayat") && activeMenu === "riwayat" && (
           <RiwayatAktivitas requests={requests} />
         )}
 
-        {requestsReady && activeMenu === "monitoring" && (
+        {requestsReady && allowedMenus.includes("monitoring") && activeMenu === "monitoring" && (
           <MonitoringProyek requests={requests} />
         )}
 
-        {!["dashboard", "pengajuan", "checker", "manager", "monitoring", "riwayat"].includes(activeMenu) && (
+        {allowedMenus.includes(activeMenu) && !["dashboard", "pengajuan", "checker", "manager", "monitoring", "riwayat"].includes(activeMenu) && (
           <div className="placeholder-card">
             <h2>{title}</h2>
             <p>Halaman ini akan dibangun setelah modul Pengajuan dan Checker selesai.</p>
