@@ -46,7 +46,7 @@ const sampleMaterial = [
   { kode: "PIGTAIL-SC", satuan: "PCS" },
 ];
 
-function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) {
+function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, revisionRequestId = null, onRevisionClosed }) {
   const [jenisPermintaan, setJenisPermintaan] = useState(""); // backward-compatible: tipe Konstruksi / Recurring
   const [jenisPengajuan, setJenisPengajuan] = useState(""); // Baru / Pengganti
   const [noReqDiganti, setNoReqDiganti] = useState("");
@@ -70,6 +70,36 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [draftTersimpan, setDraftTersimpan] = useState(null);
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftBusy, setDraftBusy] = useState(false);
+  const [sedangRevisiId, setSedangRevisiId] = useState(null);
+  const ditolakChecker = requests.filter((request) => request.status === "Ditolak Checker" && !request.digantiOleh);
+  const requestRevisi = requests.find((request) => request.requestId === sedangRevisiId);
+
+  function muatRevisi(request) {
+    if (!request || request.status !== "Ditolak Checker") return;
+    setSedangRevisiId(request.requestId);
+    setJenisPermintaan(request.jenisPermintaan || request.tipePermintaan || "");
+    setJenisPengajuan(request.jenisPengajuan || "BARU");
+    setNoReqDiganti(request.noReqDiganti || "");
+    setGudang(request.gudang || "");
+    setPekerjaan(request.pekerjaan || "");
+    setMaterials((request.materials || []).map((item) => ({ ...item })));
+    setFiles({ spk: request.files?.spk || null, boq: request.files?.boq || null, ba: request.files?.ba || null });
+    setPreviewFile(null);
+    setExcelPreview([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    if (!revisionRequestId) return;
+    const request = requests.find((item) => item.requestId === revisionRequestId);
+    if (request?.status === "Ditolak Checker" && request.requestId !== sedangRevisiId) muatRevisi(request);
+  }, [revisionRequestId, requests, sedangRevisiId]);
+
+  function tutupRevisi() {
+    setSedangRevisiId(null);
+    resetForm();
+    onRevisionClosed?.();
+  }
 
   useEffect(() => {
     let active = true;
@@ -103,7 +133,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   }
 
   function lanjutkanDraft() {
-    if (!draftTersimpan) return;
+    if (!draftTersimpan || sedangRevisiId) return;
     setJenisPermintaan(draftTersimpan.jenisPermintaan || "");
     setJenisPengajuan(draftTersimpan.jenisPengajuan || "");
     setNoReqDiganti(draftTersimpan.noReqDiganti || "");
@@ -354,6 +384,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   }
 
   function resetForm() {
+    setSedangRevisiId(null);
     setJenisPermintaan("");
     setJenisPengajuan("");
     setNoReqDiganti("");
@@ -390,6 +421,10 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (sedangRevisiId && (!requestRevisi || requestRevisi.status !== "Ditolak Checker")) {
+      await Swal.fire({ icon: "error", title: "Revisi tidak tersedia", text: "Hanya request berstatus Ditolak Checker yang dapat direvisi." });
+      return;
+    }
     if (!canSubmit) {
       alert(namaPekerjaanError || "Pengajuan belum lengkap atau QTY BA dan QTY BOQ tidak sesuai. Periksa seluruh data dan dokumen (maksimal 1 MB).");
       return;
@@ -397,8 +432,8 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
     const { isConfirmed } = await Swal.fire({
       icon: "question",
-      title: "Konfirmasi Pengajuan",
-      text: "Pastikan data material dan dokumen sudah benar. Lanjut submit pengajuan?",
+      title: sedangRevisiId ? "Konfirmasi Revisi Pengajuan" : "Konfirmasi Pengajuan",
+      text: sedangRevisiId ? `Kirim ulang revisi ${sedangRevisiId} ke Checker dengan Request ID yang sama?` : "Pastikan data material dan dokumen sudah benar. Lanjut submit pengajuan?",
       showCancelButton: true,
       confirmButtonText: "Ya, Submit",
       cancelButtonText: "Periksa Lagi",
@@ -409,7 +444,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
     if (!isConfirmed) return;
 
-    const requestId = generateRequestId(jenisPermintaan, jenisPengajuan);
+    const requestId = sedangRevisiId || generateRequestId(jenisPermintaan, jenisPengajuan);
     const now = new Date();
 
     const tanggalInput = `${now.getFullYear()}-${String(
@@ -435,14 +470,42 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
       catatanChecker: "",
     };
 
-    onCreateRequest(payload);
+    if (sedangRevisiId && requestRevisi) {
+      // Tidak membuat Request ID baru. Catat kondisi sebelumnya untuk audit trail.
+      const revisionHistory = [
+        ...(requestRevisi.revisionHistory || []),
+        {
+          revision: (requestRevisi.revisionHistory?.length || 0) + 1,
+          submittedAt: now.toISOString(),
+          alasanChecker: requestRevisi.catatanChecker || "",
+          previous: {
+            pekerjaan: requestRevisi.pekerjaan,
+            gudang: requestRevisi.gudang,
+            jenisPermintaan: requestRevisi.jenisPermintaan,
+            materials: (requestRevisi.materials || []).map((item) => ({ ...item })),
+            documents: Object.fromEntries(Object.entries(requestRevisi.files || {}).map(([key, file]) => [key, file?.name || ""])),
+          },
+        },
+      ];
+      onUpdateRequest(requestId, {
+        ...payload,
+        tanggalInput: requestRevisi.tanggalInput,
+        revisionHistory,
+        revisiTerakhirAt: now.toISOString(),
+        checkedAt: null,
+        checkerName: "",
+        snapshots: null,
+      });
+    } else {
+      onCreateRequest(payload);
+    }
     try {
       await hapusDraftPengajuan();
       setDraftTersimpan(null);
     } catch (error) {
       console.error("Draft tersimpan belum dapat dihapus:", error);
     }
-    if (jenisPengajuan === "PENGGANTI" && onUpdateRequest) {
+    if (!sedangRevisiId && jenisPengajuan === "PENGGANTI" && onUpdateRequest) {
       onUpdateRequest(noReqDiganti, {
         status: "Diganti",
         digantiOleh: requestId,
@@ -451,8 +514,10 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
 
     setSuccessModal({
       ...payload,
+      isRevision: Boolean(sedangRevisiId),
       totalMaterial: materials.length,
     });
+    onRevisionClosed?.();
 
     resetForm();
   }
@@ -460,7 +525,30 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   return (
     <>
       <form className="project-card pengajuan-refined" onSubmit={handleSubmit}>
-        <section className="mira-draft-panel" aria-label="Draft pengajuan">
+        <section className="mira-revision-panel">
+          {sedangRevisiId && requestRevisi ? (
+            <div className="mira-revision-active">
+              <div>
+                <strong>REVISI PENGAJUAN — {sedangRevisiId}</strong>
+                <p>Alasan Checker: {requestRevisi.catatanChecker || "Tidak ada catatan. Hubungi Checker untuk klarifikasi."}</p>
+                <small>Perbaiki data atau dokumen, kemudian submit ulang. Request ID tidak berubah.</small>
+              </div>
+              <button type="button" onClick={tutupRevisi}>Batal Revisi</button>
+            </div>
+          ) : ditolakChecker.length > 0 ? (
+            <div className="mira-revision-available">
+              <div><strong>Pengajuan Perlu Revisi</strong><small>{ditolakChecker.length} pengajuan ditolak Checker dan dapat diperbaiki.</small></div>
+              <select aria-label="Pilih request untuk direvisi" value="" onChange={(e) => {
+                const pilihan = ditolakChecker.find((r) => r.requestId === e.target.value);
+                if (pilihan) muatRevisi(pilihan);
+              }}>
+                <option value="">Pilih request untuk direvisi...</option>
+                {ditolakChecker.map((r) => <option key={r.requestId} value={r.requestId}>{r.requestId} · {r.pekerjaan}</option>)}
+              </select>
+            </div>
+          ) : null}
+        </section>
+        {!sedangRevisiId && <section className="mira-draft-panel" aria-label="Draft pengajuan">
           <div className="mira-draft-panel-copy">
             <strong>Draft Pengajuan</strong>
             <span>{draftLoading ? "Memeriksa draft tersimpan..." : draftTersimpan
@@ -479,7 +567,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
               </>
             )}
           </div>
-        </section>
+        </section>}
         <section className="pengajuan-info">
           <div className="pengajuan-section-heading">
             
@@ -488,7 +576,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
           <div className="pengajuan-row pengajuan-three-cols">
             <div className="field">
               <label>Tipe Permintaan <span>*</span></label>
-              <select value={jenisPermintaan} onChange={(e) => {
+              <select value={jenisPermintaan} disabled={Boolean(sedangRevisiId)} onChange={(e) => {
                 const nextValue = e.target.value;
                 setJenisPermintaan(nextValue);
                 if (nextValue !== jenisPermintaan) {
@@ -501,7 +589,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
             </div>
             <div className="field">
               <label>Jenis Permintaan <span>*</span></label>
-              <select value={jenisPengajuan} onChange={(e) => {
+              <select value={jenisPengajuan} disabled={Boolean(sedangRevisiId)} onChange={(e) => {
                 setJenisPengajuan(e.target.value);
                 setNoReqDiganti("");
               }}>
@@ -512,7 +600,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
             </div>
             <div className="field">
               <label>No. Req Diganti {jenisPengajuan === "PENGGANTI" && <span>*</span>}</label>
-              <select disabled={jenisPengajuan !== "PENGGANTI"} value={noReqDiganti}
+              <select disabled={Boolean(sedangRevisiId) || jenisPengajuan !== "PENGGANTI"} value={noReqDiganti}
                 onChange={(e) => setNoReqDiganti(e.target.value)}>
                 <option value="">{jenisPengajuan === "PENGGANTI" ? "Pilih No. Req belum PR" : "Tidak diperlukan"}</option>
                 {daftarRequestBelumPR.map((r) => (
@@ -751,7 +839,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
         </section>
 
         <button className="submit-btn" type="submit" disabled={!canSubmit}>
-          SUBMIT PERMINTAAN MATERIAL
+          {sedangRevisiId ? "KIRIM ULANG REVISI KE CHECKER" : "SUBMIT PERMINTAAN MATERIAL"}
           <span>→</span>
         </button>
         {!canSubmit && (
@@ -765,7 +853,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
         <div className="success-overlay">
           <div className="success-modal">
             <div className="success-check">✓</div>
-            <h2>Pengajuan Berhasil Disimpan</h2>
+            <h2>{successModal.isRevision ? "Revisi Berhasil Dikirim" : "Pengajuan Berhasil Disimpan"}</h2>
 
             <div className="success-label">Request ID</div>
             <div className="success-request-id">
