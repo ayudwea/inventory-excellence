@@ -147,19 +147,46 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
     });
   }
 
+  function nilaiMaterial(item, ...fields) {
+    for (const field of fields) {
+      const value = item[field];
+      if (value !== undefined && value !== null && value !== "") return value;
+    }
+    return null;
+  }
+
+  function tampilAngka(value) {
+    if (value === null || value === undefined || value === "") return "—";
+    const number = Number(value);
+    return Number.isFinite(number)
+      ? number.toLocaleString("id-ID", { maximumFractionDigits: 3 })
+      : String(value);
+  }
+
+  function statusPemenuhan(item) {
+    const value = String(nilaiMaterial(item, "pemenuhan", "PEMENUHAN") || "").toUpperCase().trim();
+    return ["DIPENUHI", "TIDAK DIPENUHI"].includes(value) ? value : "";
+  }
+
   function managerMaterialInput(item, index, field, label) {
-    const value = item[field] ?? item[field.toUpperCase()] ?? "";
+    const value = nilaiMaterial(item, field, field.toUpperCase()) ?? "";
     return (
       <input
         className="manager-material-input"
+        type={field === "donor" ? "text" : "number"}
+        min={field === "donor" ? undefined : 0}
+        step={field === "donor" ? undefined : "any"}
+        placeholder={field === "donor" ? "Gudang donor" : "0"}
         aria-label={`${label} material ${item.kode || index + 1}`}
         value={value}
-        onChange={(event) =>
-          updateManagerMaterial(index, field, event.target.value)
-        }
+        onChange={(event) => updateManagerMaterial(index, field, event.target.value)}
       />
     );
   }
+
+  const jumlahDipenuhi = detail?.materials.filter((item) => statusPemenuhan(item) === "DIPENUHI").length || 0;
+  const jumlahTidakDipenuhi = detail?.materials.filter((item) => statusPemenuhan(item) === "TIDAK DIPENUHI").length || 0;
+  const jumlahBelumDiputuskan = (detail?.materials.length || 0) - jumlahDipenuhi - jumlahTidakDipenuhi;
 
   return (
     <>
@@ -284,67 +311,87 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
               </div>
             </div>
 
-            <div className="checker-detail-section">
-              <h3>Daftar Material</h3>
-
-              <div className="checker-material-table">
-                <div className="checker-material-grid checker-material-head">
-                  <div>No</div>
-                  <div>Kode Material</div>
-                  <div>Satuan</div>
-                  <div>BOQ QTY</div>
-                  <div>BA QTY</div>
-                  <div>LOT_SIZE</div>
-                  <div>MONTHLY_DEMAND</div>
-                  <div>ROP</div>
-                  <div>EOQ</div>
-                  <div>SAP_QTY</div>
-                  <div>PO_QTY</div>
-                  <div>PR_QTY</div>
-                  <div>TOTAL</div>
-                  <div>GAP</div>
-                  <div>Pemenuhan</div>
-                  <div>PO</div>
-                  <div>TAG</div>
-                  <div>DONOR</div>
+            <div className="checker-detail-section manager-material-section">
+              <div className="manager-material-heading">
+                <div>
+                  <span className="checker-kicker">MATERIAL EVALUATION</span>
+                  <h3>Evaluasi Material</h3>
+                  <p>17 kolom mengikuti format evaluasi manual. Geser tabel ke samping untuk melihat PO, TAG, dan DONOR.</p>
                 </div>
-
-                {detail.materials.map((item, index) => {
-                  const sapQty =
-                    sapQtyByMaterial.get(normalizeMaterialCode(item.kode)) ??
-                    item.sapQty ??
-                    item.sap_qty ??
-                    item.SAP_QTY ??
-                    getDummyStock(detail.gudang, item.kode)?.sapQty ??
-                    "—";
-
-                  return (
-                    <div
-                      className="checker-material-grid checker-material-row"
-                      key={`${item.kode}-${index}`}
-                    >
-                      <div>{index + 1}</div>
-                      <div>{item.kode || "-"}</div>
-                      <div>{item.satuan || "-"}</div>
-                      <div>{item.boqQty ?? item.BOQ_QTY ?? "-"}</div>
-                      <div>{item.baQty ?? item.BA_QTY ?? "-"}</div>
-                      <div>{item.lotSize ?? item.lot_size ?? item.LOT_SIZE ?? "-"}</div>
-                      <div>{item.monthlyDemand ?? item.monthly_demand ?? item.MONTHLY_DEMAND ?? "-"}</div>
-                      <div>{item.rop ?? item.ROP ?? "-"}</div>
-                      <div>{item.eoq ?? item.EOQ ?? "-"}</div>
-                      <div>{sapQty}</div>
-                      <div>{item.poQty ?? item.po_qty ?? item.PO_QTY ?? "-"}</div>
-                      <div>{item.prQty ?? item.pr_qty ?? item.PR_QTY ?? "-"}</div>
-                      <div>{item.total ?? item.TOTAL ?? "-"}</div>
-                      <div>{item.gap ?? item.GAP ?? "-"}</div>
-                      <div className="manager-value-cell">{managerMaterialInput(item, index, "pemenuhan", "Pemenuhan")}</div>
-                      <div className="manager-value-cell">{managerMaterialInput(item, index, "po", "PO")}</div>
-                      <div className="manager-value-cell">{managerMaterialInput(item, index, "tag", "TAG")}</div>
-                      <div className="manager-donor-cell">{managerMaterialInput(item, index, "donor", "Donor")}</div>
-                    </div>
-                  );
-                })}
+                <span className="manager-row-count">{detail.materials.length} Material</span>
               </div>
+              <div className="manager-decision-summary" aria-label="Ringkasan keputusan pemenuhan">
+                <div><span className="manager-summary-dot is-yes" />Dipenuhi <strong>{jumlahDipenuhi}</strong></div>
+                <div><span className="manager-summary-dot is-no" />Tidak Dipenuhi <strong>{jumlahTidakDipenuhi}</strong></div>
+                <div><span className="manager-summary-dot is-pending" />Belum Diputuskan <strong>{jumlahBelumDiputuskan}</strong></div>
+              </div>
+              <div className="manager-table-scroll" role="region" tabIndex={0} aria-label="Tabel evaluasi 17 kolom, dapat digeser horizontal">
+                <table className="manager-evaluation-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">PLANT_NAME</th>
+                      <th scope="col">MATERIAL_CODE</th>
+                      <th scope="col">KETERANGAN</th>
+                      <th scope="col" className="manager-numeric">BOQ</th>
+                      <th scope="col" className="manager-numeric">LOT_SIZE</th>
+                      <th scope="col" className="manager-numeric">MONTHLY_DEMAND</th>
+                      <th scope="col" className="manager-numeric">ROP</th>
+                      <th scope="col" className="manager-numeric">EOQ</th>
+                      <th scope="col" className="manager-numeric">SAP_QTY <small>Snapshot</small></th>
+                      <th scope="col" className="manager-numeric">PO_QTY</th>
+                      <th scope="col" className="manager-numeric">PR_QTY</th>
+                      <th scope="col" className="manager-numeric">TOTAL</th>
+                      <th scope="col" className="manager-numeric">GAP</th>
+                      <th scope="col" className="manager-decision-column">PEMENUHAN</th>
+                      <th scope="col">PO</th>
+                      <th scope="col">TAG</th>
+                      <th scope="col">DONOR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detail.materials.map((item, index) => {
+                      const sapQty = sapQtyByMaterial.get(normalizeMaterialCode(item.kode)) ??
+                        nilaiMaterial(item, "sapQty", "sap_qty", "SAP_QTY") ??
+                        getDummyStock(detail.gudang, item.kode)?.sapQty ?? null;
+                      const gap = nilaiMaterial(item, "gap", "GAP");
+                      const keputusan = statusPemenuhan(item);
+                      return (
+                        <tr key={`${item.kode}-${index}`}>
+                          <td className="manager-sticky-plant">{detail.gudang || "—"}</td>
+                          <td className="manager-sticky-code"><strong>{item.kode || "—"}</strong></td>
+                          <td>{detail.pekerjaan || "—"}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "boqQty", "BOQ_QTY"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "lotSize", "lot_size", "LOT_SIZE"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "monthlyDemand", "monthly_demand", "MONTHLY_DEMAND"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "rop", "ROP"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "eoq", "EOQ"))}</td>
+                          <td className="manager-numeric">{tampilAngka(sapQty)}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "poQty", "po_qty", "PO_QTY"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "prQty", "pr_qty", "PR_QTY"))}</td>
+                          <td className="manager-numeric">{tampilAngka(nilaiMaterial(item, "total", "TOTAL"))}</td>
+                          <td className={`manager-numeric ${gap !== null && Number(gap) < 0 ? "manager-negative-gap" : ""}`}>{tampilAngka(gap)}</td>
+                          <td className="manager-decision-column">
+                            <select
+                              className={`manager-decision-select ${keputusan === "DIPENUHI" ? "is-yes" : keputusan === "TIDAK DIPENUHI" ? "is-no" : ""}`}
+                              aria-label={`Pemenuhan material ${item.kode || index + 1}`}
+                              value={keputusan}
+                              onChange={(event) => updateManagerMaterial(index, "pemenuhan", event.target.value)}
+                            >
+                              <option value="">Pilih keputusan</option>
+                              <option value="DIPENUHI">DIPENUHI</option>
+                              <option value="TIDAK DIPENUHI">TIDAK DIPENUHI</option>
+                            </select>
+                          </td>
+                          <td className="manager-edit-cell">{managerMaterialInput(item, index, "po", "PO")}</td>
+                          <td className="manager-edit-cell">{managerMaterialInput(item, index, "tag", "TAG")}</td>
+                          <td className="manager-edit-cell manager-donor-cell">{managerMaterialInput(item, index, "donor", "DONOR")}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="manager-table-footnote">Nilai yang belum tersedia ditampilkan sebagai “—”, bukan nol. Data SAP dapat berasal dari snapshot Checker; jika belum ada, tampilan lama masih memakai data stok dummy sebagai fallback.</p>
             </div>
 
             <div className="checker-detail-section">
