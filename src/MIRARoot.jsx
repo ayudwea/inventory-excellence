@@ -4,9 +4,9 @@ import LoginMIRA from "./LoginMIRA.jsx";
 import { supabase } from "./lib/supabase.js";
 import "./LoginMIRA.css";
 
-// Demo default dipertahankan untuk menjaga prototype selama integrasi backend.
+// Supabase Auth menjadi default. Demo hanya aktif jika VITE_MIRA_AUTH_MODE=demo.
 const SESSION_KEY = "mira_frontend_demo_session";
-const USE_SUPABASE_AUTH = import.meta.env.VITE_MIRA_AUTH_MODE === "supabase";
+const USE_SUPABASE_AUTH = import.meta.env.VITE_MIRA_AUTH_MODE !== "demo";
 
 function initialDemoUser() {
   try {
