@@ -49,3 +49,11 @@
 .mira-demo-session{position:fixed;z-index:9999;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;padding:8px 9px 8px 12px;border-radius:12px;background:#2e2023;color:#fff;box-shadow:0 9px 24px rgba(0,0,0,.22);font:700 10px Inter,sans-serif}
 .mira-demo-session button{padding:8px 12px;border:0;border-radius:8px;background:#8b1a28;color:#fff;cursor:pointer;font:inherit}
 .mira-demo-session button:hover{background:#a52a39}
+
+/* Supabase Auth: sesi login dan penyiapan akun */
+.mira-auth-wait,.mira-auth-unprovisioned { min-height:100vh; display:grid; place-items:center; background:#f9f5f6; color:#4e3038; font-family:Inter,ui-sans-serif,system-ui,sans-serif; padding:24px; }
+.mira-auth-unprovisioned>div { max-width:550px; padding:36px; border:1px solid #ead7db; border-radius:18px; background:white; box-shadow:0 12px 42px rgba(82,22,34,.07); }
+.mira-auth-unprovisioned h2 { margin:0 0 16px; color:#651422; font-size:25px; }
+.mira-auth-unprovisioned p { font-size:13px; line-height:1.7; color:#705861; }
+.mira-auth-overline { font-size:10px!important; letter-spacing:1px; font-weight:850; color:#8d5360!important; }
+.mira-auth-unprovisioned button { cursor:pointer; background:#651422; color:white; padding:11px 16px; border:0; border-radius:8px; font-weight:750; margin-top:8px; }
