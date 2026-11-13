@@ -1,0 +1,33 @@
+
+.mira-pic-dashboard { width:100%; max-width:1280px; margin:0 auto; color:#4b363d; }
+.mira-pic-dashboard-head { display:flex; align-items:center; justify-content:space-between; gap:16px; background:#fff; border:1px solid #eadfe1; border-radius:14px; padding:22px 24px; }
+.mira-pic-dashboard-head span { display:block; font-size:9px; letter-spacing:1px; font-weight:850; color:#987c82; }
+.mira-pic-dashboard-head h2 { font-family:"DM Serif Display",serif; font-size:26px; color:#5c0b12; margin:7px 0; font-weight:400; }
+.mira-pic-dashboard-head p { font-size:11px; color:#9a868a; margin:4px 0 0; }
+.mira-pic-dashboard-head button { padding:12px 16px; background:#5c0b12; color:white; border:0; border-radius:10px; cursor:pointer; font-size:10px; font-weight:850; white-space:nowrap; }
+.mira-pic-dashboard-head button:hover { background:#80232f; }
+.mira-pic-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:16px 0; }
+.mira-pic-metric { display:flex; flex-direction:column; text-align:left; gap:10px; padding:19px 20px; border:1px solid #eadde0; border-radius:12px; background:white; cursor:pointer; font-family:inherit; }
+.mira-pic-metric:hover, .mira-pic-metric.selected { background:#fff7f8; border-color:#ad727c; }
+.mira-pic-metric span { font-size:11px; color:#8b7479; }
+.mira-pic-metric strong { font-size:28px; font-weight:800; color:#661421; }
+.mira-pic-metric small { font-size:9px; color:#ab999e; }
+.mira-pic-list-head { margin-top:20px; border-radius:12px 12px 0 0; border-bottom:0; }
+.mira-pic-list-head h3 { margin:0 0 7px; color:#611722; font-size:17px; }
+.mira-pic-dashboard-head button.mira-pic-tracking-link { background:#fff7f8; color:#681524; border:1px solid #ddc6ca; }
+.mira-pic-filters { display:grid; grid-template-columns:minmax(0,1fr) 215px; gap:12px; background:#fff; border:1px solid #eadfe1; border-top:0; padding:0 24px 18px; }
+.mira-pic-filters input,.mira-pic-filters select { width:100%; box-sizing:border-box; border:1px solid #e0d1d4; padding:11px 12px; border-radius:9px; background:white; color:#5b4248; font-size:11px; font-family:inherit; }
+.mira-pic-request-list { background:#fff; border:1px solid #eadfe1; border-top:0; border-radius:0 0 12px 12px; padding:0 24px 16px; }
+.mira-pic-request { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:17px 0; border-top:1px solid #f2e8e9; }
+.mira-pic-request-main { min-width:0; }
+.mira-pic-request-main strong { font-size:12px; color:#651724; }
+.mira-pic-request-main p { font-size:11px; color:#71595f; margin:5px 0; }
+.mira-pic-request-main small { font-size:10px; color:#9a8589; }
+.mira-pic-request-actions { display:flex; flex-direction:column; align-items:flex-end; gap:9px; }
+.mira-pic-state { border-radius:18px; padding:7px 10px; background:#f8ecee; color:#7b2735; font-size:9px; font-weight:800; text-align:center; }
+.mira-pic-state.needs-revision { background:#fff0ec; color:#b44643; }
+.mira-pic-request-actions button { background:white; border:1px solid #d9bac1; border-radius:8px; padding:9px 12px; color:#671826; font-size:9px; font-weight:800; cursor:pointer; }
+.mira-pic-request-actions button:hover { background:#fff6f7; }
+.mira-pic-empty { text-align:center; padding:40px 12px; font-size:12px; color:#9a8389; }
+.mira-pic-footnote { padding:12px 0; color:#a59397; font-size:10px; }
+@media(max-width:780px) { .mira-pic-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .mira-pic-dashboard-head,.mira-pic-request { flex-direction:column; align-items:stretch; } .mira-pic-filters { grid-template-columns:1fr; } .mira-pic-request-actions { align-items:flex-start; } }
