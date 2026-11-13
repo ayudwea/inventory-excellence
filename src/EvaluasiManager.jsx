@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 import "./EvaluasiManager.css";
 import { getDummyStock } from "./data/masterStokDummy";
 
@@ -19,6 +20,14 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [catatanManager, setCatatanManager] = useState("");
   const [alasanTolak, setAlasanTolak] = useState("");
+  const [materialSearch, setMaterialSearch] = useState("");
+  const [materialFilter, setMaterialFilter] = useState("SEMUA");
+  const [draftMaterials, setDraftMaterials] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [excelRows, setExcelRows] = useState([]);
+  const [approvalPreview, setApprovalPreview] = useState(false);
+
 
   const waitingRequests = useMemo(
     () =>
@@ -28,13 +37,36 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
     [requests]
   );
 
-  const detail = useMemo(
-    () =>
-      waitingRequests.find(
-        (request) => request.requestId === selectedRequestId
-      ) || null,
-    [waitingRequests, selectedRequestId]
-  );
+  const sourceDetail = waitingRequests.find(
+    (request) => request.requestId === selectedRequestId
+  ) || null;
+  const detail = sourceDetail
+    ? { ...sourceDetail, materials: draftMaterials ?? sourceDetail.materials }
+    : null;
+
+  function selectRequest(id) {
+    if (id === selectedRequestId) return;
+    if (isDirty && !window.confirm("Perubahan evaluasi belum disimpan. Pindah request dan abaikan perubahan?")) return;
+    const selected = waitingRequests.find((request) => request.requestId === id);
+    setSelectedRequestId(id);
+    setDraftMaterials(selected ? selected.materials.map((item) => ({ ...item })) : null);
+    setCatatanManager(selected?.catatanManager || "");
+    setAlasanTolak("");
+    setMaterialSearch("");
+    setMaterialFilter("SEMUA");
+    setIsDirty(false);
+    setApprovalPreview(false);
+    closePreview();
+  }
+
+  // Jika request diselesaikan oleh workflow lain, jangan menampilkan formulir yang sudah tidak aktif.
+  useEffect(() => {
+    if (!selectedRequestId || sourceDetail) return;
+    setSelectedRequestId("");
+    setDraftMaterials(null);
+    setIsDirty(false);
+  }, [selectedRequestId, sourceDetail]);
+
 
   const sapQtyByMaterial = useMemo(() => {
     const headers = detail?.snapshots?.dataStokSapHeaders || [];
@@ -105,46 +137,108 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
     }).format(date);
   }
 
+  function saveEvaluation() {
+    if (!detail) return;
+    onUpdateRequest(detail.requestId, {
+      materials: detail.materials.map((item) => ({ ...item })),
+      catatanManager: catatanManager.trim(),
+      managerDraftSavedAt: new Date().toISOString(),
+    });
+    setIsDirty(false);
+  }
+
+  const decisionChecks = detail?.materials.map((item) => {
+    const decision = statusPemenuhan(item);
+    const po = Number(nilaiMaterial(item, "po", "PO") ?? 0);
+    const tag = Number(nilaiMaterial(item, "tag", "TAG") ?? 0);
+    const nonNegative = [po, tag].every((v) => Number.isFinite(v) && v >= 0);
+    const valid = !!decision && nonNegative &&
+      (decision !== "DIPENUHI" || po + tag > 0) &&
+      (decision !== "TIDAK DIPENUHI" || po + tag === 0) &&
+      (tag <= 0 || String(nilaiMaterial(item, "donor", "DONOR") || "").trim().length > 0);
+    return { kode: item.kode || "Material", valid };
+  }) || [];
+
+  const incompleteChecks = decisionChecks.filter((item) => !item.valid);
+  const approvalReady = detail && decisionChecks.length > 0 &&
+    incompleteChecks.length === 0 && stats.mismatch === 0 &&
+    stats.dokumenLengkap === stats.totalDokumenWajib;
+
   function prosesManager(action) {
     if (!detail) return;
-
     if (action === "tolak" && !alasanTolak) {
       alert("Pilih alasan penolakan terlebih dahulu.");
       return;
     }
-
-    const actionLabel = action === "approve" ? "menyetujui" : "menolak";
-
-    const yakin = window.confirm(
-      `Yakin ingin ${actionLabel} ${detail.requestId}?`
-    );
-
+    if (action === "approve") {
+      if (!approvalReady) {
+        alert("Evaluasi belum lengkap. Periksa checklist dan material yang ditandai.");
+        return;
+      }
+      setApprovalPreview(true);
+      return;
+    }
+    const yakin = window.confirm(`Yakin ingin menolak ${detail.requestId}?`);
     if (!yakin) return;
+    finalizeManagerDecision("tolak");
+  }
 
+  function finalizeManagerDecision(action) {
+    if (!detail) return;
     onUpdateRequest(detail.requestId, {
-      status:
-        action === "approve"
-          ? "Menunggu Pemenuhan Material"
-          : "Ditolak Manager",
+      materials: detail.materials.map((item) => ({ ...item })),
+      status: action === "approve" ? "Menunggu Pemenuhan Material" : "Ditolak Manager",
       alasanTolakManager: action === "tolak" ? alasanTolak : "",
       catatanManager: catatanManager.trim(),
       managerName: "Manager",
       managerEvaluatedAt: new Date().toISOString(),
     });
-
     setSelectedRequestId("");
+    setDraftMaterials(null);
+    setIsDirty(false);
     setAlasanTolak("");
     setCatatanManager("");
+    setApprovalPreview(false);
+  }
+
+  async function openPreview(file) {
+    if (!file) return;
+    closePreview();
+    const ext = file.name?.split(".").pop()?.toLowerCase();
+    if (ext === "pdf") {
+      setPreview({ name: file.name, type: "pdf", url: URL.createObjectURL(file) });
+      return;
+    }
+    if (ext === "xlsx" || ext === "xls") {
+      try {
+        const workbook = XLSX.read(await file.arrayBuffer());
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+        setExcelRows(rows.slice(0, 150).map((row) => row.slice(0, 35)));
+        setPreview({ name: file.name, type: "excel" });
+      } catch (error) {
+        console.error("Gagal preview Excel:", error);
+        alert("Dokumen Excel tidak dapat dibaca.");
+      }
+    } else {
+      alert("Format preview belum didukung.");
+    }
+  }
+
+  function closePreview() {
+    if (preview?.url) URL.revokeObjectURL(preview.url);
+    setPreview(null);
+    setExcelRows([]);
   }
 
   function updateManagerMaterial(index, field, value) {
     if (!detail) return;
-
-    onUpdateRequest(detail.requestId, {
-      materials: detail.materials.map((item, itemIndex) =>
+    setDraftMaterials((previous) =>
+      (previous ?? detail.materials).map((item, itemIndex) =>
         itemIndex === index ? { ...item, [field]: value } : item
-      ),
-    });
+      )
+    );
+    setIsDirty(true);
   }
 
   function nilaiMaterial(item, ...fields) {
@@ -187,6 +281,15 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
   const jumlahDipenuhi = detail?.materials.filter((item) => statusPemenuhan(item) === "DIPENUHI").length || 0;
   const jumlahTidakDipenuhi = detail?.materials.filter((item) => statusPemenuhan(item) === "TIDAK DIPENUHI").length || 0;
   const jumlahBelumDiputuskan = (detail?.materials.length || 0) - jumlahDipenuhi - jumlahTidakDipenuhi;
+  const totalPO = detail?.materials.reduce((sum, item) => sum + (Number(nilaiMaterial(item, "po", "PO")) || 0), 0) || 0;
+  const totalTAG = detail?.materials.reduce((sum, item) => sum + (Number(nilaiMaterial(item, "tag", "TAG")) || 0), 0) || 0;
+  const displayedMaterials = detail?.materials.map((item, index) => ({ item, index })).filter(({ item }) => {
+    const matchSearch = !materialSearch.trim() || [
+      item.kode, item.satuan, detail.gudang, detail.pekerjaan
+    ].some((value) => String(value || "").toLowerCase().includes(materialSearch.trim().toLowerCase()));
+    const decision = statusPemenuhan(item);
+    return matchSearch && (materialFilter === "SEMUA" || (materialFilter === "BELUM" ? !decision : decision === materialFilter));
+  }) || [];
 
   return (
     <>
@@ -212,11 +315,7 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
 
             <select
               value={selectedRequestId}
-              onChange={(e) => {
-                setSelectedRequestId(e.target.value);
-                setCatatanManager("");
-                setAlasanTolak("");
-              }}
+              onChange={(e) => selectRequest(e.target.value)}
             >
               <option value="">Pilih Request ID</option>
 
@@ -325,6 +424,22 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                 <div><span className="manager-summary-dot is-no" />Tidak Dipenuhi <strong>{jumlahTidakDipenuhi}</strong></div>
                 <div><span className="manager-summary-dot is-pending" />Belum Diputuskan <strong>{jumlahBelumDiputuskan}</strong></div>
               </div>
+              <div className="manager-table-tools">
+                <input
+                  type="search"
+                  aria-label="Cari kode material"
+                  placeholder="Cari kode material, satuan, gudang..."
+                  value={materialSearch}
+                  onChange={(e) => setMaterialSearch(e.target.value)}
+                />
+                <select aria-label="Filter keputusan pemenuhan" value={materialFilter} onChange={(e) => setMaterialFilter(e.target.value)}>
+                  <option value="SEMUA">Semua keputusan</option>
+                  <option value="DIPENUHI">Dipenuhi</option>
+                  <option value="TIDAK DIPENUHI">Tidak Dipenuhi</option>
+                  <option value="BELUM">Belum Diputuskan</option>
+                </select>
+                <span>{displayedMaterials.length} dari {detail.materials.length} material</span>
+              </div>
               <div className="manager-table-scroll" role="region" tabIndex={0} aria-label="Tabel evaluasi 17 kolom, dapat digeser horizontal">
                 <table className="manager-evaluation-table">
                   <thead>
@@ -349,7 +464,7 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {detail.materials.map((item, index) => {
+                    {displayedMaterials.map(({ item, index }) => {
                       const sapQty = sapQtyByMaterial.get(normalizeMaterialCode(item.kode)) ??
                         nilaiMaterial(item, "sapQty", "sap_qty", "SAP_QTY") ??
                         getDummyStock(detail.gudang, item.kode)?.sapQty ?? null;
@@ -388,10 +503,47 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                         </tr>
                       );
                     })}
+                    {displayedMaterials.length === 0 && (
+                      <tr><td colSpan={17} className="manager-no-results">Tidak ada material sesuai pencarian atau filter.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-              <p className="manager-table-footnote">Nilai yang belum tersedia ditampilkan sebagai “—”, bukan nol. Data SAP dapat berasal dari snapshot Checker; jika belum ada, tampilan lama masih memakai data stok dummy sebagai fallback.</p>
+              <p className="manager-table-footnote">Nilai yang belum tersedia ditampilkan sebagai “—”, bukan nol. SAP QTY tetap mengutamakan snapshot Checker, dan data stok dummy masih menjadi fallback frontend. Perubahan tabel belum disimpan sampai klik “Simpan Sementara”.</p>
+              <div className="manager-save-bar">
+                <span>{isDirty ? "● Ada perubahan yang belum disimpan." : detail.managerDraftSavedAt ? `Tersimpan: ${formatTanggal(detail.managerDraftSavedAt)}` : "Belum ada perubahan evaluasi."}</span>
+                <button type="button" onClick={saveEvaluation} disabled={!isDirty}>Simpan Evaluasi Sementara</button>
+              </div>
+            </div>
+
+            <div className="checker-detail-section manager-documents-section">
+              <div className="checker-note-title"><h3>Dokumen Pendukung</h3><span>Preview tanpa meninggalkan evaluasi</span></div>
+              <div className="manager-document-list">
+                {["spk", "boq", "ba"].map((key) => {
+                  const file = detail.files?.[key];
+                  return (
+                    <button key={key} type="button" disabled={!file} onClick={() => openPreview(file)}>
+                      <strong>{key.toUpperCase()}</strong>
+                      <span>{file?.name || "Belum tersedia"}</span>
+                      <b>{file ? "Lihat Dokumen" : "Tidak ada file"}</b>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="checker-detail-section manager-validation">
+              <div className="checker-note-title"><h3>Checklist Sebelum Approve</h3><span>{approvalReady ? "Evaluasi lengkap" : "Lengkapi sebelum persetujuan"}</span></div>
+              <div className="manager-validation-grid">
+                <p className={stats.mismatch === 0 ? "passed" : "failed"}>{stats.mismatch === 0 ? "✓" : "!"} QTY BA dan BOQ sesuai</p>
+                <p className={stats.dokumenLengkap === stats.totalDokumenWajib ? "passed" : "failed"}>{stats.dokumenLengkap === stats.totalDokumenWajib ? "✓" : "!"} Dokumen wajib tersedia</p>
+                <p className={jumlahBelumDiputuskan === 0 ? "passed" : "failed"}>{jumlahBelumDiputuskan === 0 ? "✓" : "!"} Seluruh material punya keputusan</p>
+                <p className={incompleteChecks.length === 0 ? "passed" : "failed"}>{incompleteChecks.length === 0 ? "✓" : "!"} PO/TAG dan DONOR sesuai keputusan</p>
+              </div>
+              {incompleteChecks.length > 0 && (
+                <p className="manager-validation-note">Material perlu diperiksa: {incompleteChecks.slice(0, 8).map((entry) => entry.kode).join(", ")}{incompleteChecks.length > 8 ? ` dan ${incompleteChecks.length - 8} lainnya` : ""}.</p>
+              )}
+              <p className="manager-validation-help">Untuk DIPENUHI, isi PO atau TAG lebih dari 0; jika TAG digunakan, DONOR wajib diisi. Untuk TIDAK DIPENUHI, PO dan TAG harus 0/kosong.</p>
             </div>
 
             <div className="checker-detail-section">
@@ -423,7 +575,7 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                   <textarea
                     className="manager-note"
                     value={catatanManager}
-                    onChange={(e) => setCatatanManager(e.target.value)}
+                    onChange={(e) => { setCatatanManager(e.target.value); setIsDirty(true); }}
                     placeholder="Tambahkan catatan jika diperlukan..."
                   />
                 </div>
@@ -452,6 +604,8 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
                   type="button"
                   className="checker-approve-btn"
                   onClick={() => prosesManager("approve")}
+                  disabled={!approvalReady}
+                  title={!approvalReady ? "Lengkapi checklist evaluasi sebelum Approve" : "Lihat ringkasan sebelum menyetujui"}
                 >
                   Approve
                 </button>
@@ -461,6 +615,51 @@ function EvaluasiManager({ requests, onUpdateRequest }) {
         )}
       </section>
 
+      {preview && (
+        <div className="preview-overlay" onClick={closePreview} role="presentation">
+          <div className="preview-modal manager-preview-modal" role="dialog" aria-modal="true" aria-label="Preview dokumen" onClick={(event) => event.stopPropagation()}>
+            <div className="preview-header">
+              <div><h3>Preview Dokumen</h3><p>{preview.name}</p></div>
+              <button type="button" className="preview-close" onClick={closePreview}>✕</button>
+            </div>
+            <div className="preview-content">
+              {preview.type === "pdf" ? (
+                <iframe src={preview.url} className="preview-frame" title={preview.name} />
+              ) : (
+                <div className="excel-preview">
+                  <table><tbody>{excelRows.map((row, i) => (
+                    <tr key={i}>{row.map((cell, j) => <td key={j}>{String(cell)}</td>)}</tr>
+                  ))}</tbody></table>
+                  <p>Preview dibatasi hingga 150 baris dan 35 kolom pertama.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {approvalPreview && detail && (
+        <div className="detail-overlay" onClick={() => setApprovalPreview(false)} role="presentation">
+          <div className="detail-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-label="Konfirmasi persetujuan manager" onClick={(event) => event.stopPropagation()}>
+            <div className="detail-header">
+              <div><span className="detail-kicker">RINGKASAN SEBELUM APPROVE</span><h2>{detail.requestId}</h2><p>{detail.gudang} · {detail.pekerjaan}</p></div>
+              <button type="button" className="detail-close" onClick={() => setApprovalPreview(false)}>✕</button>
+            </div>
+            <div className="manager-approval-summary">
+              <div><span>Jumlah Material</span><strong>{detail.materials.length}</strong></div>
+              <div><span>Dipenuhi</span><strong>{jumlahDipenuhi}</strong></div>
+              <div><span>Tidak Dipenuhi</span><strong>{jumlahTidakDipenuhi}</strong></div>
+              <div><span>Total PO</span><strong>{tampilAngka(totalPO)}</strong></div>
+              <div><span>Total TAG</span><strong>{tampilAngka(totalTAG)}</strong></div>
+            </div>
+            <p className="manager-confirm-note">Pastikan QTY PO dan TAG sesuai kebutuhan. Dengan menyetujui, evaluasi dan status request akan disimpan bersama.</p>
+            <div className="detail-footer">
+              <button type="button" onClick={() => setApprovalPreview(false)}>Periksa Lagi</button>
+              <button type="button" className="manager-confirm-approve" onClick={() => { if (approvalReady) finalizeManagerDecision("approve"); }}>Konfirmasi Approve</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
