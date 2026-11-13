@@ -115,14 +115,19 @@ function SupabaseWorkspace() {
     );
   }
 
+  // JANGAN menampilkan data IndexedDB demo kepada user terautentikasi:
+  // IndexedDB lama tidak dipisahkan per akun. Integrasi request per-user akan dibuat berikutnya.
   return (
-    <>
-      <App currentRole={role} />
-      <div className="mira-demo-session" role="status">
-        <span>{role.toUpperCase()} · NIK {profile.nik}</span>
+    <div className="mira-auth-unprovisioned">
+      <div>
+        <p className="mira-auth-overline">SUPABASE AUTH · LOGIN BERHASIL</p>
+        <h2>Selamat datang di MIRA</h2>
+        <p>NIK <strong>{profile.nik}</strong> · Role <strong>{role.toUpperCase()}</strong></p>
+        <p>Akun sudah terverifikasi. Penyimpanan dan pembacaan request multiuser sedang disiapkan. Untuk menghindari tercampurnya data antar akun, halaman transaksi belum diaktifkan dalam mode Supabase.</p>
+        {authError && <p role="alert">{authError}</p>}
         <button type="button" onClick={signOut}>Keluar</button>
       </div>
-    </>
+    </div>
   );
 }
 
