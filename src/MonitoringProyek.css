@@ -25,3 +25,41 @@
 
 .monitoring-page .pengajuan-history-header { padding-bottom:16px; border-bottom:1px solid #f0e4e6; }
 .monitoring-page .detail-documents button:disabled { cursor:not-allowed; opacity:.55; }
+
+/* Timeline tracking project request */
+.mira-status-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:19px 0; }
+.mira-status-summary>div { display:flex; flex-direction:column; gap:8px; border:1px solid #eee1e3; border-radius:11px; padding:15px; background:#fffafa; }
+.mira-status-summary span { font-size:10px; color:#8d747a; }
+.mira-status-summary strong { font-size:21px; color:#63101b; }
+.mira-monitor-list { display:flex; flex-direction:column; gap:12px; }
+.mira-monitor-item { border:1px solid #ebdfe1; background:white; border-radius:12px; padding:17px 18px; }
+.mira-monitor-item-top, .mira-monitor-item-footer { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.mira-monitor-item-top strong { color:#63101b; font-size:13px; overflow-wrap:anywhere; }
+.mira-monitor-item-top p { margin:6px 0; font-size:11px; color:#5c4d51; }
+.mira-monitor-item-top small, .mira-monitor-item-footer small { font-size:10px; color:#9b8589; }
+.mira-monitor-status { align-self:flex-start; white-space:normal; text-align:center; font-size:10px; font-weight:750; color:#703341; background:#f8edef; padding:8px 11px; border-radius:20px; }
+.mira-monitor-status.is-stopped { background:#fff1ef; color:#aa3c42; }
+.mira-monitor-progress { width:100%; height:7px; background:#f1e8e9; border-radius:10px; overflow:hidden; margin:17px 0 12px; }
+.mira-monitor-progress>span { display:block; background:#761b2a; height:100%; border-radius:10px; transition:width .2s ease; }
+.mira-monitor-item-footer { align-items:center; }
+.mira-monitor-item-footer button { color:#63101b; border:1px solid #d6b8bf; background:#fff; padding:9px 13px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:750; }
+.mira-monitor-item-footer button:hover { background:#f9eff1; }
+.mira-monitor-detail { margin-top:18px; padding-top:19px; border-top:1px solid #f0e4e6; }
+.mira-status-timeline { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; padding:0; margin:4px 0 21px; list-style:none; }
+.mira-status-step { position:relative; display:flex; align-items:flex-start; flex-direction:column; gap:10px; min-width:0; color:#a9969a; }
+.mira-status-step:before { position:absolute; content:""; left:29px; top:12px; right:6px; height:2px; background:#eee1e3; }
+.mira-status-step:last-child:before { display:none; }
+.mira-status-step-dot { z-index:1; display:grid; place-items:center; width:25px; height:25px; border-radius:50%; border:1px solid #decbd0; background:white; font-size:10px; font-weight:850; }
+.mira-status-step strong { display:block; margin-bottom:5px; font-size:10px; line-height:1.4; }
+.mira-status-step small { font-size:9px; line-height:1.4; }
+.mira-status-step.completed .mira-status-step-dot { color:#fff; background:#731f2d; border-color:#731f2d; }
+.mira-status-step.completed:before { background:#731f2d; }
+.mira-status-step.active .mira-status-step-dot { color:#fff; background:#731f2d; border-color:#731f2d; }
+.mira-status-step.active, .mira-status-step.completed { color:#6a2532; }
+.mira-status-step.stopped .mira-status-step-dot { color:#fff; background:#b84b52; border-color:#b84b52; }
+.mira-status-step.stopped { color:#b84b52; }
+.mira-monitor-reason { border-radius:9px; background:#fff4f1; border:1px solid #efc8c6; padding:12px; font-size:11px; color:#9a3a41; }
+.mira-monitor-reason p { margin:6px 0 0; line-height:1.5; }
+.mira-monitor-next { background:#faf5f6; border-radius:8px; padding:12px; color:#68474f; font-size:11px; line-height:1.6; }
+.mira-monitor-meta { margin:8px 0 0; font-size:10px; color:#94757e; }
+@media(max-width:760px) { .mira-status-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .mira-monitor-item-top { flex-direction:column; } .mira-status-timeline { grid-template-columns:1fr; gap:12px; } .mira-status-step { flex-direction:row; align-items:center; } .mira-status-step:before { left:12px; top:26px; bottom:-13px; right:auto; width:2px; height:auto; } .mira-status-step>div { flex:1; } }
