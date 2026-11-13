@@ -63,3 +63,9 @@
 .mira-monitor-next { background:#faf5f6; border-radius:8px; padding:12px; color:#68474f; font-size:11px; line-height:1.6; }
 .mira-monitor-meta { margin:8px 0 0; font-size:10px; color:#94757e; }
 @media(max-width:760px) { .mira-status-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .mira-monitor-item-top { flex-direction:column; } .mira-status-timeline { grid-template-columns:1fr; gap:12px; } .mira-status-step { flex-direction:row; align-items:center; } .mira-status-step:before { left:12px; top:26px; bottom:-13px; right:auto; width:2px; height:auto; } .mira-status-step>div { flex:1; } }
+
+.mira-monitor-revisions { display:flex; flex-direction:column; gap:9px; margin:14px 0; padding:13px 15px; background:#fff8f9; border:1px solid #e9d9dd; border-radius:10px; }
+.mira-monitor-revisions>strong { color:#6e2634; font-size:11px; }
+.mira-monitor-revisions>div { display:flex; flex-direction:column; gap:5px; padding-top:8px; border-top:1px solid #f0e2e5; }
+.mira-monitor-revisions span { font-size:10px; font-weight:750; color:#79404b; }
+.mira-monitor-revisions small { font-size:10px; color:#937b80; }
