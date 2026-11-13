@@ -1,3 +1,4 @@
+import { showMiraConfirm } from "./components/miraConfirm.js";
 import { useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -509,16 +510,12 @@ function PemeriksaanChecker({ requests, onUpdateRequest, onApproved }) {
     const label =
       status === "Disetujui Checker" ? "menyetujui" : "menolak";
 
-    const { isConfirmed } = await Swal.fire({
-      icon: "question",
+    const isConfirmed = await showMiraConfirm({
       title: "Konfirmasi Pemeriksaan",
       text: `Yakin ingin ${label} ${checkerDetail.requestId}?`,
-      showCancelButton: true,
-      confirmButtonText: status === "Disetujui Checker" ? "Ya, Approve" : "Ya, Tolak",
-      cancelButtonText: "Batal",
-      confirmButtonColor: status === "Disetujui Checker" ? "#5c0b12" : "#b12f39",
-      cancelButtonColor: "#8f7f82",
-      reverseButtons: true,
+      confirmText: status === "Disetujui Checker" ? "Ya, Approve" : "Ya, Tolak",
+      cancelText: "Batal",
+      variant: status === "Disetujui Checker" ? "confirm" : "danger",
     });
 
     if (!isConfirmed) return;
