@@ -609,3 +609,46 @@
   border-color: var(--wine-soft);
   box-shadow: 0 0 0 2px rgba(92, 11, 18, .08);
 }
+
+/* Manager evaluation UI — 17 kolom sesuai template manual */
+.manager-material-section { min-width:0; }
+.manager-material-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:15px; }
+.manager-material-heading h3 { margin:5px 0 6px!important; font-size:22px!important; }
+.manager-material-heading p { margin:0; color:#9c8288; font-size:10.5px; line-height:1.6; }
+.manager-row-count { border:1px solid #e9d7da; background:#fff8f8; color:#722834; white-space:nowrap; border-radius:50px; padding:9px 12px; font-size:10px; font-weight:800; }
+.manager-decision-summary { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:13px; }
+.manager-decision-summary>div { display:flex; align-items:center; gap:7px; padding:10px 13px; border-radius:9px; background:#fcf9f9; border:1px solid #eee1e3; color:#746068; font-size:10px; }
+.manager-decision-summary strong { color:#602330; font-size:13px; margin-left:5px; }
+.manager-summary-dot { width:8px; height:8px; border-radius:50%; background:#b8a4a8; }
+.manager-summary-dot.is-yes { background:#348357; }
+.manager-summary-dot.is-no { background:#bd4f58; }
+.manager-summary-dot.is-pending { background:#c59c52; }
+.manager-table-scroll { overflow-x:auto; max-width:100%; border:1px solid #e7d9dc; border-radius:11px; background:#fff; scrollbar-color:#c7b0b5 #f5edee; }
+.manager-table-scroll:focus-visible { outline:3px solid rgba(102,25,40,.2); outline-offset:2px; }
+.manager-evaluation-table { width:max-content; min-width:100%; border-collapse:separate; border-spacing:0; font-size:11px; color:#594c50; }
+.manager-evaluation-table thead th { position:sticky; top:0; z-index:2; text-align:left; background:#f3e7e9; color:#65212d; font-size:9.5px; font-weight:850; letter-spacing:.015em; white-space:nowrap; border-bottom:1px solid #dcc9cd; padding:14px 12px; min-width:100px; }
+.manager-evaluation-table thead small { display:block; margin-top:4px; font-size:8px; color:#987c81; }
+.manager-evaluation-table td { padding:13px 12px; height:57px; white-space:nowrap; border-bottom:1px solid #f0e6e8; background:#fff; }
+.manager-evaluation-table tbody tr:nth-child(even) td { background:#fdfafb; }
+.manager-evaluation-table tbody tr:hover td { background:#fff6f7; }
+.manager-evaluation-table tbody tr:last-child td { border-bottom:0; }
+.manager-evaluation-table th:nth-child(1),.manager-evaluation-table td:nth-child(1) { min-width:145px; max-width:185px; }
+.manager-evaluation-table th:nth-child(2),.manager-evaluation-table td:nth-child(2) { min-width:175px; max-width:245px; }
+.manager-evaluation-table th:nth-child(3),.manager-evaluation-table td:nth-child(3) { min-width:160px; }
+.manager-evaluation-table td:nth-child(2) strong { color:#67202e; font-weight:850; }
+.manager-evaluation-table .manager-numeric { text-align:right; font-variant-numeric:tabular-nums; min-width:102px; }
+.manager-evaluation-table .manager-negative-gap { color:#b43c4e; font-weight:800; }
+.manager-evaluation-table .manager-decision-column { min-width:188px; }
+.manager-evaluation-table .manager-sticky-plant { position:sticky; left:0; z-index:1; box-shadow:2px 0 5px rgba(80,45,55,.025); }
+.manager-evaluation-table .manager-sticky-code { position:sticky; left:145px; z-index:1; box-shadow:2px 0 5px rgba(80,45,55,.04); }
+.manager-evaluation-table thead th:first-child { position:sticky; left:0; z-index:4; }
+.manager-evaluation-table thead th:nth-child(2) { position:sticky; left:145px; z-index:4; }
+.manager-decision-select { width:100%; min-width:165px; height:36px; border:1px solid #dcc9cd; background:#fff; border-radius:7px; padding:0 8px; color:#78666b; font-size:10px; font-weight:750; font-family:inherit; }
+.manager-decision-select.is-yes { color:#226a41; border-color:#acd7b9; background:#eef8f1; }
+.manager-decision-select.is-no { color:#9c3d48; border-color:#e3b4b9; background:#fff1f2; }
+.manager-evaluation-table .manager-edit-cell { min-width:124px; }
+.manager-evaluation-table .manager-donor-cell { min-width:180px; }
+.manager-evaluation-table .manager-material-input { width:100%; min-width:96px; height:36px; padding:0 10px; font-size:11px; color:#5c4149; background:#fff; border:1px solid #e0cdd0; border-radius:7px; }
+.manager-evaluation-table .manager-material-input:focus,.manager-decision-select:focus { outline:0; border-color:#7b3240; box-shadow:0 0 0 3px rgba(106,28,42,.10); }
+.manager-table-footnote { margin:12px 0 0; color:#9b8388; font-size:10px; line-height:1.6; }
+@media(max-width:780px) { .manager-material-heading { align-items:flex-start; flex-direction:column; } .manager-decision-summary>div { flex:1 1 140px; } .manager-evaluation-table thead th,.manager-evaluation-table td { padding:10px 9px; } }
