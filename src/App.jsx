@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import PengajuanMaterial from "./PengajuanMaterial";
+import DashboardPIC from "./DashboardPIC";
 import PemeriksaanChecker from "./PemeriksaanChecker";
 import EvaluasiManager from "./EvaluasiManager";
 import MonitoringProyek from "./MonitoringProyek";
@@ -152,6 +153,7 @@ function App() {
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [requests, setRequests] = useState([]);
   const [requestsReady, setRequestsReady] = useState(false);
+  const [revisionRequestId, setRevisionRequestId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -183,6 +185,18 @@ function App() {
       year: "numeric",
     }).format(new Date());
   }, []);
+
+  function bukaRevisi(requestId) {
+    const request = requests.find((item) => item.requestId === requestId);
+    if (request?.status !== "Ditolak Checker") return;
+    setRevisionRequestId(requestId);
+    setActiveMenu("pengajuan");
+  }
+
+  function pindahMenu(menu) {
+    setActiveMenu(menu);
+    if (menu !== "pengajuan") setRevisionRequestId(null);
+  }
 
   function tambahRequest(request) {
     setRequests((prev) => [request, ...prev]);
@@ -244,7 +258,7 @@ function App() {
                 key={id}
                 type="button"
                 className={`nav-item ${activeMenu === id ? "active" : ""}`}
-                onClick={() => setActiveMenu(id)}
+                onClick={() => pindahMenu(id)}
               >
                 <span className="nav-icon">{icon}</span>
                 <span>{label}</span>
@@ -294,11 +308,17 @@ function App() {
           </div>
         )}
 
+        {requestsReady && activeMenu === "dashboard" && (
+          <DashboardPIC requests={requests} onMenuChange={pindahMenu} onReviseRequest={bukaRevisi} />
+        )}
+
         {requestsReady && activeMenu === "pengajuan" && (
           <PengajuanMaterial
             onCreateRequest={tambahRequest}
             requests={requests}
             onUpdateRequest={updateRequest}
+            revisionRequestId={revisionRequestId}
+            onRevisionClosed={() => setRevisionRequestId(null)}
           />
         )}
 
@@ -322,7 +342,7 @@ function App() {
           <MonitoringProyek requests={requests} />
         )}
 
-        {!["pengajuan", "checker", "manager", "monitoring", "riwayat"].includes(activeMenu) && (
+        {!["dashboard", "pengajuan", "checker", "manager", "monitoring", "riwayat"].includes(activeMenu) && (
           <div className="placeholder-card">
             <h2>{title}</h2>
             <p>Halaman ini akan dibangun setelah modul Pengajuan dan Checker selesai.</p>
