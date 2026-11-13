@@ -1,3 +1,4 @@
+import { showMiraConfirm } from "./components/miraConfirm.js";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -430,16 +431,11 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
       return;
     }
 
-    const { isConfirmed } = await Swal.fire({
-      icon: "question",
+    const isConfirmed = await showMiraConfirm({
       title: sedangRevisiId ? "Konfirmasi Revisi Pengajuan" : "Konfirmasi Pengajuan",
       text: sedangRevisiId ? `Kirim ulang revisi ${sedangRevisiId} ke Checker dengan Request ID yang sama?` : "Pastikan data material dan dokumen sudah benar. Lanjut submit pengajuan?",
-      showCancelButton: true,
-      confirmButtonText: "Ya, Submit",
-      cancelButtonText: "Periksa Lagi",
-      confirmButtonColor: "#5c0b12",
-      cancelButtonColor: "#8f7f82",
-      reverseButtons: true,
+      confirmText: "Ya, Submit",
+      cancelText: "Periksa Lagi",
     });
 
     if (!isConfirmed) return;
