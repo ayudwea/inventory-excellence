@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
 import "./PengajuanMaterial.css";
 import { getDummyStock } from "./data/masterStokDummy";
+import { bacaDraftPengajuan, simpanDraftPengajuan, hapusDraftPengajuan } from "./data/draftPengajuan";
 
 // Standar penamaan untuk laporan/dashboard: bebas jenis pekerjaannya, seragam formatnya.
 function formatNamaPekerjaan(value) {
@@ -66,6 +67,74 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   const [excelPreview, setExcelPreview] = useState([]);
   const [successModal, setSuccessModal] = useState(null);
   const [submittedDetail, setSubmittedDetail] = useState(null);
+  const [draftTersimpan, setDraftTersimpan] = useState(null);
+  const [draftLoading, setDraftLoading] = useState(true);
+  const [draftBusy, setDraftBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    bacaDraftPengajuan()
+      .then((draft) => { if (active) setDraftTersimpan(draft); })
+      .catch((error) => console.error("Gagal membaca draft pengajuan:", error))
+      .finally(() => { if (active) setDraftLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  async function simpanDraftSaatIni() {
+    if (draftBusy) return;
+    setDraftBusy(true);
+    try {
+      const draft = await simpanDraftPengajuan({
+        jenisPermintaan, jenisPengajuan, noReqDiganti, gudang,
+        pekerjaan: formatNamaPekerjaan(pekerjaan).trim(), materials, files,
+      });
+      setDraftTersimpan(draft);
+      await Swal.fire({
+        icon: "success", title: "Draft berhasil disimpan",
+        text: "Data dan dokumen tersimpan di browser ini. Buka kembali Pengajuan Material untuk melanjutkan.",
+        confirmButtonColor: "#5c0b12",
+      });
+    } catch (error) {
+      console.error(error);
+      await Swal.fire({ icon: "error", title: "Gagal menyimpan draft", text: error.message });
+    } finally {
+      setDraftBusy(false);
+    }
+  }
+
+  function lanjutkanDraft() {
+    if (!draftTersimpan) return;
+    setJenisPermintaan(draftTersimpan.jenisPermintaan || "");
+    setJenisPengajuan(draftTersimpan.jenisPengajuan || "");
+    setNoReqDiganti(draftTersimpan.noReqDiganti || "");
+    setGudang(draftTersimpan.gudang || "");
+    setPekerjaan(draftTersimpan.pekerjaan || "");
+    setMaterials(Array.isArray(draftTersimpan.materials) && draftTersimpan.materials.length
+      ? draftTersimpan.materials : [{ kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" }]);
+    setFiles({ spk: draftTersimpan.files?.spk || null, boq: draftTersimpan.files?.boq || null, ba: draftTersimpan.files?.ba || null });
+    setPreviewFile(null);
+    setExcelPreview([]);
+    Swal.fire({ icon: "success", title: "Draft berhasil dimuat", text: "Periksa kembali seluruh data sebelum submit.", confirmButtonColor: "#5c0b12" });
+  }
+
+  async function hapusDraftTersimpan() {
+    const { isConfirmed } = await Swal.fire({
+      icon: "warning", title: "Hapus draft?",
+      text: "Draft dan lampiran yang tersimpan akan dihapus dari browser ini.",
+      showCancelButton: true, confirmButtonText: "Ya, Hapus", cancelButtonText: "Batal",
+      confirmButtonColor: "#b12f39",
+    });
+    if (!isConfirmed) return;
+    setDraftBusy(true);
+    try {
+      await hapusDraftPengajuan();
+      setDraftTersimpan(null);
+    } catch (error) {
+      await Swal.fire({ icon: "error", title: "Gagal menghapus draft", text: error.message });
+    } finally {
+      setDraftBusy(false);
+    }
+  }
 
   const requestSudahDiganti = new Set(
     requests.map((r) => r.noReqDiganti).filter(Boolean)
@@ -367,6 +436,12 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
     };
 
     onCreateRequest(payload);
+    try {
+      await hapusDraftPengajuan();
+      setDraftTersimpan(null);
+    } catch (error) {
+      console.error("Draft tersimpan belum dapat dihapus:", error);
+    }
     if (jenisPengajuan === "PENGGANTI" && onUpdateRequest) {
       onUpdateRequest(noReqDiganti, {
         status: "Diganti",
@@ -385,6 +460,26 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest }) 
   return (
     <>
       <form className="project-card pengajuan-refined" onSubmit={handleSubmit}>
+        <section className="mira-draft-panel" aria-label="Draft pengajuan">
+          <div className="mira-draft-panel-copy">
+            <strong>Draft Pengajuan</strong>
+            <span>{draftLoading ? "Memeriksa draft tersimpan..." : draftTersimpan
+              ? `Draft terakhir: ${new Date(draftTersimpan.savedAt).toLocaleString("id-ID")}`
+              : "Simpan sementara untuk melanjutkan pengajuan nanti."}</span>
+            <small>Mode demo: draft dan dokumen hanya tersimpan di browser/perangkat ini.</small>
+          </div>
+          <div className="mira-draft-panel-actions">
+            <button type="button" className="mira-draft-button mira-draft-save" disabled={draftBusy || draftLoading} onClick={simpanDraftSaatIni}>
+              {draftBusy ? "MEMPROSES..." : "SIMPAN DRAFT"}
+            </button>
+            {draftTersimpan && (
+              <>
+                <button type="button" className="mira-draft-button" disabled={draftBusy} onClick={lanjutkanDraft}>LANJUTKAN DRAFT</button>
+                <button type="button" className="mira-draft-button mira-draft-delete" disabled={draftBusy} onClick={hapusDraftTersimpan}>HAPUS DRAFT</button>
+              </>
+            )}
+          </div>
+        </section>
         <section className="pengajuan-info">
           <div className="pengajuan-section-heading">
             
