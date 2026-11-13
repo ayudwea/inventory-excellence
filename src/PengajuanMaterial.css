@@ -381,3 +381,18 @@
   line-height: 1.45;
   font-weight: 650;
 }
+
+/* Draft pengajuan: disimpan secara lokal untuk frontend demo */
+.mira-draft-panel { display:flex; gap:18px; align-items:center; justify-content:space-between; padding:16px 18px; margin-bottom:24px; border:1px solid #e9d9dc; background:#fffafa; border-radius:13px; }
+.mira-draft-panel-copy { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.mira-draft-panel-copy strong { font-size:13px; color:#611522; }
+.mira-draft-panel-copy span { font-size:11px; color:#6f5b60; }
+.mira-draft-panel-copy small { font-size:10px; color:#a48d92; line-height:1.5; }
+.mira-draft-panel-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:8px; }
+.mira-draft-button { background:#fff; border:1px solid #c9adb2; color:#611522; border-radius:8px; font-size:10px; font-weight:800; padding:11px 13px; cursor:pointer; font-family:inherit; }
+.mira-draft-button:hover:not(:disabled) { background:#f7ebed; }
+.mira-draft-save { background:#611522; border-color:#611522; color:white; }
+.mira-draft-save:hover:not(:disabled) { background:#7e2635; }
+.mira-draft-delete { color:#ab4a52; }
+.mira-draft-button:disabled { opacity:.55; cursor:not-allowed; }
+@media(max-width:800px){ .mira-draft-panel { align-items:stretch; flex-direction:column; } .mira-draft-panel-actions { justify-content:flex-start; } }
