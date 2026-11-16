@@ -411,3 +411,20 @@
 .mira-revision-available small { font-size:10px; color:#977e84; }
 .mira-revision-available select { border:1px solid #ddc8cb; border-radius:9px; padding:10px 12px; min-width:215px; max-width:100%; background:white; color:#5c2932; font-size:10px; font-family:inherit; }
 @media(max-width:760px){ .mira-revision-active,.mira-revision-available { flex-direction:column; align-items:stretch; } .mira-revision-available select { width:100%; } }
+
+
+/* Compact cable controls: keep material table unchanged; open details in modal */
+.mira-cable-compact-list{margin:13px 0 4px;display:flex;flex-direction:column;gap:8px}
+.mira-cable-compact-row{display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap;padding:11px 14px;border:1px solid #e9d8dd;border-radius:10px;background:#fffafa}
+.mira-cable-compact-title{display:flex;align-items:center;gap:10px;min-width:165px;flex:1 1 220px}
+.mira-cable-compact-icon{height:30px;width:30px;border-radius:9px;flex:none;display:grid;place-items:center;background:#f4e5e9;color:#75273e;font-size:16px}
+.mira-cable-compact-title>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mira-cable-compact-title strong{font-size:11px;color:#602333;overflow-wrap:anywhere}
+.mira-cable-compact-title small{font-size:10px;color:#968188}
+.mira-cable-compact-po{display:flex;flex-direction:column;gap:4px;flex:0 0 130px}
+.mira-cable-compact-po span{font-size:9px;color:#967880;font-weight:800;letter-spacing:.04em}
+.mira-cable-compact-po strong{font-size:15px;color:#63172e;font-variant-numeric:tabular-nums}
+.mira-cable-compact-po .mira-cable-compact-invalid{color:#b13d47}
+.mira-cable-compact-button{border:1px solid #6d1b31;background:#fff;color:#681e32;border-radius:8px;padding:10px 12px;font:inherit;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+.mira-cable-compact-button:hover{background:#f9edf1}
+@media(max-width:520px){.mira-cable-compact-row{gap:10px}.mira-cable-compact-title{flex-basis:100%}.mira-cable-compact-po{flex:1}.mira-cable-compact-button{flex:none}}
