@@ -1,4 +1,7 @@
 import { showMiraConfirm } from "./components/miraConfirm.js";
+import CableAllocationPreview from "./components/CableAllocationPreview.jsx";
+import { isMaterialKabel, ringkasAlokasiKabel } from "./data/kabelPotonganPreview.js";
+import "./components/CableAllocationPreview.css";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -43,6 +46,8 @@ const sampleGudang = [
 
 const sampleMaterial = [
   { kode: "ADSS-12", satuan: "M" },
+  { kode: "AC-OF-SM-24D", satuan: "M" },
+  { kode: "AC-OF-SM-48D", satuan: "M" },
   { kode: "ODP-SOLID-8-L", satuan: "PCS" },
   { kode: "PIGTAIL-SC", satuan: "PCS" },
 ];
@@ -209,6 +214,12 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
     Number(m.baQty) > 0 && Number(m.boqQty) > 0 &&
     Number(m.baQty) === Number(m.boqQty)
   );
+  const kabelValid = materials.every((m) => {
+    if (!isMaterialKabel(m)) return true;
+    const pengajuanKabel = ringkasAlokasiKabel(m, gudang);
+    if (!pengajuanKabel.sumberStokKabel) return true; // data simulasi tidak tersedia; tidak memaksa pilihan.
+    return pengajuanKabel.poQtyBaru !== null;
+  });
   const dokumenLengkap = ["spk", "boq", "ba"].every((key) => {
     const file = files[key];
     if (!file || file.size > MAX_FILE_SIZE) return false;
@@ -220,7 +231,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
       daftarRequestBelumPR.some((r) => r.requestId === noReqDiganti));
   const namaPekerjaanError = validasiNamaPekerjaan(pekerjaan);
   const canSubmit = !!jenisPermintaan && !!jenisPengajuan && !!gudang &&
-    !namaPekerjaanError && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap;
+    !namaPekerjaanError && requestPenggantiValid && tidakDuplikat && qtyValid && dokumenLengkap && kabelValid;
   const mismatchRows = materials.filter((m) =>
     m.baQty !== "" && m.boqQty !== "" &&
     Number(m.baQty) !== Number(m.boqQty)
@@ -265,6 +276,11 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
             kode: value,
             satuan: master?.satuan || "",
             sapQty: stock?.sapQty ?? null,
+            kabelPotonganDipilih: [],
+            kabelPotonganDetail: [],
+            totalPotonganDipilih: null,
+            poQtyBaru: null,
+            sumberStokKabel: null,
           };
         }
 
@@ -274,6 +290,13 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
         };
       })
     );
+  }
+
+  function pilihPotonganKabel(index, ids) {
+    setMaterials((prev) => prev.map((item, idx) => idx === index
+      ? { ...item, kabelPotonganDipilih: ids }
+      : item
+    ));
   }
 
   function handleFileChange(key, file) {
@@ -458,7 +481,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
       gudang,
       pekerjaan: formatNamaPekerjaan(pekerjaan).trim(),
       materials: materials.map((item) => ({
-        ...item,
+        ...ringkasAlokasiKabel(item, gudang),
         sapQty: getDummyStock(gudang, item.kode)?.sapQty ?? null,
       })),
       files: { ...files },
@@ -785,6 +808,19 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
               </div>
             ))}
           </div>
+          {materials.map((item, index) => isMaterialKabel(item) && item.kode ? (
+            <CableAllocationPreview
+              key={`${item.kode}-${index}`}
+              item={item}
+              gudang={gudang}
+              onSelectPotongan={(ids) => pilihPotonganKabel(index, ids)}
+            />
+          ) : null)}
+          {!kabelValid && (
+            <div className="pengajuan-warning" role="alert">
+              Pilihan potongan kabel melebihi BOQ QTY. Kurangi pilihan agar pengajuan bisa dikirim.
+            </div>
+          )}
           {mismatchRows > 0 && (
             <div className="pengajuan-warning" role="alert">
               ⚠ {mismatchRows} material memiliki QTY BA dan QTY BOQ berbeda. Samakan QTY agar bisa submit.
