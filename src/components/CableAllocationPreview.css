@@ -1,0 +1,42 @@
+/* MIRA cable allocation trial — scoped to inline cable request panel */
+.mira-cable-preview{margin:12px 0 18px;padding:20px;border:1px solid #e8d6da;border-radius:13px;background:linear-gradient(180deg,#fffcfd,#fff);color:#523740}
+.mira-cable-preview-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:17px}
+.mira-cable-kicker{display:block;margin-bottom:6px;font-size:9px;font-weight:850;letter-spacing:.12em;color:#a57680}
+.mira-cable-preview-heading h3{margin:0 0 5px;font-family:"DM Serif Display",Georgia,serif;font-size:21px;font-weight:400;color:#681926}
+.mira-cable-preview-heading p{margin:0;font-size:11px;color:#9d838b;line-height:1.6}
+.mira-cable-code{font-family:inherit;font-size:12px;font-weight:750}
+.mira-cable-demo-label{flex:none;padding:8px 10px;border-radius:30px;font-size:9px;letter-spacing:.04em;font-weight:900;color:#8d4c24;background:#fff1da}
+.mira-cable-empty{padding:18px;border:1px dashed #e7cbd0;background:#fff8f9;border-radius:9px;font-size:11px;color:#886c73;line-height:1.7}
+.mira-cable-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:13px}
+.mira-cable-stat{display:flex;min-width:0;flex-direction:column;gap:7px;padding:15px;background:#fff8f9;border:1px solid #eadde0;border-radius:10px}
+.mira-cable-stat-total{background:#f9eaee}
+.mira-cable-stat span{color:#895e69;font-size:9px;letter-spacing:.04em;font-weight:850}
+.mira-cable-stat strong{font-size:22px;color:#611728;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mira-cable-stat strong small{font-size:11px}
+.mira-cable-stat em{font-style:normal;color:#9a858a;font-size:10px}
+.mira-cable-picker{margin-top:15px;overflow:hidden;border:1px solid #e9d9dd;border-radius:10px}
+.mira-cable-picker-trigger{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;background:#fff9fa;border:0;padding:13px 15px;color:#5b2735;cursor:pointer}
+.mira-cable-picker-trigger span:first-child{display:flex;flex-direction:column;gap:5px}
+.mira-cable-picker-trigger strong{font-size:12px}
+.mira-cable-picker-trigger small{font-size:10px;color:#987780}
+.mira-cable-picker-trigger span:last-child{font-size:19px}
+.mira-cable-cut-options{padding:5px 12px;background:#fff;max-height:240px;overflow:auto;border-top:1px solid #eee3e6}
+.mira-cable-cut-option{display:flex;align-items:center;gap:12px;padding:11px 8px;border-bottom:1px solid #f1e9eb;cursor:pointer}
+.mira-cable-cut-option:last-child{border-bottom:0}
+.mira-cable-cut-option input{flex:none;width:16px;height:16px;accent-color:#6f1729}
+.mira-cable-cut-option span{display:flex;flex:1;flex-direction:column;gap:4px}
+.mira-cable-cut-option span b{font-size:11px}
+.mira-cable-cut-option span small{font-size:9px;color:#a68e94}
+.mira-cable-cut-option>strong{font-size:13px;color:#661c2b;font-variant-numeric:tabular-nums}
+.mira-cable-cut-option:has(input:checked){background:#fff4f5}
+.mira-cable-calculation{margin-top:14px;background:#fcf8f9;border:1px solid #efdee2;border-radius:11px;padding:15px}
+.mira-cable-calc-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;color:#7e6870;font-size:11px}
+.mira-cable-calc-row strong{color:#50313b}
+.mira-cable-subtract{color:#2b794a!important}
+.mira-cable-po-result{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px;margin-top:9px;border-radius:9px;background:#f6e4e9;color:#6a1a2c}
+.mira-cable-po-result span{font-size:11px;font-weight:800}
+.mira-cable-po-result span small{display:block;font-size:9px;font-weight:400;color:#956e79;margin-top:5px}
+.mira-cable-po-result strong{font-size:23px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mira-cable-error{padding:12px;color:#a43e38;background:#fff1ed;border:1px solid #f0c9c2;border-radius:8px;font-size:11px;font-weight:700}
+.mira-cable-disclaimer{color:#9a8288;font-size:10px;line-height:1.65;margin:12px 0 0}
+@media(max-width:700px){.mira-cable-preview{padding:13px}.mira-cable-preview-heading{flex-wrap:wrap}.mira-cable-stats{gap:6px}.mira-cable-stat{padding:10px}.mira-cable-stat strong{font-size:17px}.mira-cable-stat span{font-size:8px}.mira-cable-po-result{align-items:flex-start;flex-direction:column}}
