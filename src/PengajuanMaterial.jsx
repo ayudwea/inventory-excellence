@@ -1,7 +1,7 @@
 import { showMiraConfirm } from "./components/miraConfirm.js";
-import CableAllocationPreview from "./components/CableAllocationPreview.jsx";
-import { isMaterialKabel, ringkasAlokasiKabel } from "./data/kabelPotonganPreview.js";
-import "./components/CableAllocationPreview.css";
+import CableAllocationModal from "./components/CableAllocationModal.jsx";
+import { isMaterialKabel, getKabelPreview, ringkasAlokasiKabel } from "./data/kabelPotonganPreview.js";
+import "./components/CableAllocationModal.css";
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Swal from "sweetalert2";
@@ -72,6 +72,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
   const [previewFile, setPreviewFile] = useState(null);
   const [excelPreview, setExcelPreview] = useState([]);
   const [successModal, setSuccessModal] = useState(null);
+  const [cableModalIndex, setCableModalIndex] = useState(null);
   const [submittedDetail, setSubmittedDetail] = useState(null);
   const [draftTersimpan, setDraftTersimpan] = useState(null);
   const [draftLoading, setDraftLoading] = useState(true);
@@ -246,6 +247,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
 
   function hapusMaterial(index) {
     if (materials.length === 1) return;
+    setCableModalIndex(null);
     setMaterials((prev) => prev.filter((_, i) => i !== index));
   }
 
@@ -417,6 +419,7 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
     setMaterials([
       { kode: "", satuan: "", sapQty: null, baQty: "", boqQty: "" },
     ]);
+    setCableModalIndex(null);
     setFiles({
       spk: null,
       boq: null,
@@ -808,14 +811,38 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
               </div>
             ))}
           </div>
-          {materials.map((item, index) => isMaterialKabel(item) && item.kode ? (
-            <CableAllocationPreview
-              key={`${item.kode}-${index}`}
-              item={item}
-              gudang={gudang}
-              onSelectPotongan={(ids) => pilihPotonganKabel(index, ids)}
-            />
-          ) : null)}
+          {materials.some((item) => isMaterialKabel(item) && item.kode) && (
+            <div className="mira-cable-compact-list">
+              {materials.map((item, index) => {
+                if (!isMaterialKabel(item) || !item.kode) return null;
+                const stock = getKabelPreview(gudang, item.kode);
+                const result = ringkasAlokasiKabel(item, gudang);
+                const count = result.kabelPotonganDipilih?.length ?? 0;
+                const qty = result.totalPotonganDipilih;
+                const ready = stock && item.boqQty !== "" && Number(item.boqQty) > 0;
+                const invalid = ready && result.poQtyBaru === null;
+                const print = (amount) => Number(amount).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+                return (
+                  <div key={`${item.kode}-${index}`} className="mira-cable-compact-row">
+                    <div className="mira-cable-compact-title">
+                      <span className="mira-cable-compact-icon" aria-hidden="true">◉</span>
+                      <div>
+                        <strong>{item.kode}</strong>
+                        <small>{stock ? `${count} potongan dipilih · ${print(qty)} meter` : "Stok simulasi belum tersedia"}</small>
+                      </div>
+                    </div>
+                    <div className="mira-cable-compact-po">
+                      <span>PO QTY BARU</span>
+                      <strong className={invalid ? "mira-cable-compact-invalid" : ""}>{ready && !invalid ? `${print(result.poQtyBaru)} m` : "—"}</strong>
+                    </div>
+                    <button type="button" className="mira-cable-compact-button" onClick={() => setCableModalIndex(index)}>
+                      {count ? "Ubah Potongan" : "Atur Potongan"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {!kabelValid && (
             <div className="pengajuan-warning" role="alert">
               Pilihan potongan kabel melebihi BOQ QTY. Kurangi pilihan agar pengajuan bisa dikirim.
@@ -884,6 +911,15 @@ function PengajuanMaterial({ onCreateRequest, requests = [], onUpdateRequest, re
         )}
       </form>
 
+      {cableModalIndex !== null && materials[cableModalIndex] && (
+        <CableAllocationModal
+          open
+          item={materials[cableModalIndex]}
+          gudang={gudang}
+          onClose={() => setCableModalIndex(null)}
+          onApply={(ids) => pilihPotonganKabel(cableModalIndex, ids)}
+        />
+      )}
       {successModal && (
         <div className="success-overlay">
           <div className="success-modal">
